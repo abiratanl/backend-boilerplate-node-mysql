@@ -1,0 +1,156 @@
+openapi: 3.0.0
+info:
+  title: Node.js Boilerplate API
+  version: 1.0.0
+  description: API documentation for the Boilerplate
+  contact:
+    name: Developer Name
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The auto-generated UUID of the user
+        name:
+          type: string
+          description: Full name
+        email:
+          type: string
+          format: email
+          description: Unique email address
+        role:
+          type: string
+          enum: [admin, proprietario, atendente]
+          default: atendente
+        is_active:
+          type: boolean
+          default: false
+      example:
+        id: "uuid-atend-001"
+        name: "Maria Silva"
+        email: "maria@loja.com"
+        role: "atendente"
+        is_active: true
+
+tags:
+  - name: Users
+    description: User management API
+
+paths:
+  /users:
+    get:
+      summary: Returns the list of all active users
+      tags: [Users]
+      responses:
+        200:
+          description: The list of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+    post:
+      summary: Create a new user
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+                  enum: [admin, proprietario, atendente]
+      responses:
+        201:
+          description: Created
+        409:
+          description: Email already in use
+
+  /users/{id}:
+    get:
+      summary: Get a user by ID
+      tags: [Users]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: The user UUID
+      responses:
+        200:
+          description: The user data
+        404:
+          description: User not found
+    put:
+      summary: Update a user
+      tags: [Users]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                role:
+                  type: string
+                  enum: [admin, proprietario, atendente]
+                is_active:
+                  type: boolean
+      responses:
+        200:
+          description: Updated successfully
+        404:
+          description: User not found
+    delete:
+      summary: Soft delete a user
+      tags: [Users]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: User soft deleted successfully
+        404:
+          description: User not found or already deleted

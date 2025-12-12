@@ -1,22 +1,17 @@
-const express = require('express');
-const pool = require('./config/db');
+require('dotenv').config(); // Load environment variables first
+const app = require('./app');
+const validateEnv = require('./utils/validateEnv'); // Import the validator
 
-const app = express();
-const port = process.env.PORT || 3000;
+// 1. Validate Environment Variables (Fail Fast Strategy)
+validateEnv();
 
-app.get('/', async (req, res) => {
-    try {
-        // Testa conexão listando os usuários que criamos no init.sql
-        const [rows] = await pool.query('SELECT id, name, email, role FROM users');
-        res.json({ 
-            status: 'Sucesso! TESTE DE HOT RELOAD FUNCIONANDO!', 
-            usuarios_seed: rows 
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+const PORT = process.env.PORT || 3000;
 
-app.listen(port, () => {
-    console.log(`Servidor rodando na porta ${port}`);
+// 2. Start the server
+app.listen(PORT, () => {
+  console.log(`=================================`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📄 Swagger: http://localhost:${PORT}/api-docs`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`=================================`);
 });
