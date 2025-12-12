@@ -32,7 +32,6 @@ A robust, production-ready boilerplate for building RESTful APIs using Node.js a
 git clone [https://github.com/YOUR_USERNAME/backend-boilerplate.git](https://github.com/YOUR_USERNAME/backend-boilerplate.git)
 cd backend-boilerplate
 
----
 
 ---
 
