@@ -1,24 +1,53 @@
--- Cria o banco de dados se não existir
+-- ==========================================
+-- 1. Main Database Configuration (DEV/PROD)
+-- ==========================================
 CREATE DATABASE IF NOT EXISTS loja_db;
 USE loja_db;
 
--- Cria a tabela de usuários
+-- Create users table
 CREATE TABLE IF NOT EXISTS users (
     id CHAR(36) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255),
-    -- ALTERAÇÃO AQUI: Mudamos de 'vendedor' para 'atendente'
+    -- Roles: admin, proprietario (owner), atendente (staff)
     role ENUM('admin', 'proprietario', 'atendente') NOT NULL DEFAULT 'atendente',
     is_active BOOLEAN DEFAULT FALSE,
-    invite_token VARCHAR(255),
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Inserir Dados de Exemplo (Seed)
--- OBS: As senhas simuladas (hashes) representam '123456'.
+-- Insert Seed Data (for Development environment)
+-- Note: Passwords represent '123456' (hashed)
 INSERT INTO users (id, name, email, password, role, is_active) VALUES 
-('uuid-admin-001', 'Administrador Sistema', 'admin@loja.com', '$2a$10$X7...', 'admin', TRUE),
-('uuid-prop-001', 'Dono da Loja', 'dono@loja.com', '$2a$10$X7...', 'proprietario', TRUE),
--- ALTERAÇÃO AQUI: O usuário de exemplo agora é um atendente
-('uuid-atend-001', 'Atendente Padrão', 'atendente@loja.com', '$2a$10$X7...', 'atendente', TRUE);
+('uuid-admin-001', 'System Administrator', 'admin@loja.com', '$2a$10$X7V...valid_hash_here...', 'admin', TRUE),
+('uuid-prop-001', 'Store Owner', 'dono@loja.com', '$2a$10$X7V...valid_hash_here...', 'proprietario', TRUE),
+('uuid-atend-001', 'Standard Staff', 'atendente@loja.com', '$2a$10$X7V...valid_hash_here...', 'atendente', TRUE);
+
+
+-- ==========================================
+-- 2. Test Database Configuration (TEST)
+-- ==========================================
+CREATE DATABASE IF NOT EXISTS loja_test;
+USE loja_test;
+
+-- Recreate the table structure for the test environment.
+-- We do NOT insert seeds here, as integration tests require a clean state to start.
+CREATE TABLE IF NOT EXISTS users (
+    id CHAR(36) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255),
+    role ENUM('admin', 'proprietario', 'atendente') NOT NULL DEFAULT 'atendente',
+    is_active BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==========================================
+-- 3. Permissions Granting (Recommended)
+-- ==========================================
+-- Ensure the configured user has access to both databases
+GRANT ALL PRIVILEGES ON loja_db.* TO 'root'@'%';
+GRANT ALL PRIVILEGES ON loja_test.* TO 'root'@'%';
+FLUSH PRIVILEGES;
