@@ -1,42 +1,59 @@
 # Backend Boilerplate (Node.js + MySQL + Docker) #
 
-A robust, production-ready boilerplate for building RESTful APIs using Node.js and MySQL. It features a fully Dockerized environment, JWT authentication, Role-Based Access Control (RBAC), and a secure invite-only registration flow.
+A robust, production-ready boilerplate for building RESTful APIs using Node.js and MySQL. It features a fully Dockerized environment, JWT authentication, **Swagger documentation**, **Automated Testing**, Role-Based Access Control (RBAC), and a secure invite-only registration flow.
 
-## 🚀 Key Features
+## 🚀 Key Features ##
 
 - **Dockerized Environment:** Zero-config setup with Docker & Docker Compose.
 - **MVC Architecture:** Clean separation of concerns (Controllers, Services, Models).
-- **Security First:** Implements `helmet`, `cors`, `bcryptjs` (hashing), and JWT strategies.
+- **Security First:** Implements `helmet`, `cors`, `bcryptjs` (hashing), and JWT strategies, and **Environment Variable Validation (Fail Fast)**.
+
+* 📚 **Fully Documented**: Interactive API documentation via **Swagger/OpenAPI 3.0**.
+
+* 🧪 **Automated Tests**: Integrated Unit and Integration testing suite using **Jest** and **Supertest**.
+
+* **Data Integrity**: Uses **UUIDs** for primary keys and implements **Soft Deletes** (logical exclusion) to preserve data history.
 - **RBAC (Role-Based Access Control):** Native support for roles: `admin`, `proprietario` (owner), and `atendente` (staff/attendant).
 - **Invite-Only Workflow:** Public registration is disabled. Users are created via admin invites and activate their accounts via token.
 - **Database Seeding:** Automatic database creation and population via `init.sql`.
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack ##
 
 - **Runtime:** Node.js
+
 - **Framework:** Express.js
+
 - **Database:** MySQL 8.0
+
 - **ORM/Driver:** mysql2 (using Promises/Connection Pool)
+
+- **Testing**: Jest, Supertest, Cross-Env
+
+- **Documentation**: Swagger UI, YAML
+
 - **Dev Tools:** Nodemon (configured for Docker hot-reloading)
 
 ---
 
-## 🏁 Getting Started
+### 🏁 Getting Started ###
 
-### Prerequisites
+ **Prerequisites**
+
 - [Docker](https://www.docker.com/) and Docker Compose installed on your machine.
 - You **do not** need Node.js or MySQL installed locally to run the project.
 
-### 1. Clone the repository
+- Optional: Node.js (v18+) if you wish to run tests locally outside Docker.
+
+### 1. Clone the repository ###
 
 `bash`
 ```
-git clone https://github.com/YOUR_USERNAME/backend-boilerplate.git
+git clone https://github.com/abiratanl/backend-boilerplate.git
 
 cd backend-boilerplate
 ```
 
-### 2. Configure Environment Variables
+### 2. Configure Environment Variables ###
 
 Create the `.env` file based on the example provided.
 
@@ -72,7 +89,45 @@ The server will start at: `http://localhost:3000`
 
 ---
 
-## 🗄️ Database & Default Users ##
+### 📚 API Documentation ###
+
+The API is fully documented using Swagger (OpenAPI 3.0). The definitions are maintained in a clean `src/swagger.yaml` file.
+
+Once the server is running, access the interactive documentation at:
+
+👉 http://localhost:3000/api-docs
+
+---
+
+
+**🧪 Running Tests**
+
+This boilerplate comes with a complete test suite covering Unit Tests (using Mocks) and Integration Tests (using a test database).
+
+To run the tests locally:
+
+Ensure dependencies are installed:
+
+`Bash`
+
+```
+npm install
+
+```
+
+Run the test command:
+
+`Bash`
+
+```
+npm test
+
+```
+Note: The integration tests require a database connection. Ensure your `.env` is configured correctly or that you have a MySQL instance running.
+
+---
+
+### 🗄️ Database & Default Users ###
 
 When running for the first time, the `init.sql` script will automatically create the `loja_db` database, the `users` table, and insert the following seed users (password hashes represent `123456`):
 
@@ -90,13 +145,18 @@ Role | Email | Password (Hash) |
 `Plaintext`
 ```
 src/
-├── config/         # Database connection pool
+├── config/         # Database connection pool & Swagger config
 ├── controllers/    # Request handlers (Input/Output)
 ├── middlewares/    # Auth, Validation, and RBAC logic
-├── models/         # Database queries (SQL)
+├── models/         # Database queries (SQL), Soft Delete logic
 ├── routes/         # API Route definitions
+├── utils/          # Helper scripts (Env validation)
+├── app.js          # Express app setup
 ├── server.js       # Entry point
-└── app.js          # Express app setup
+└── swagger.yaml    # OpenAPI Documentation
+tests/
+├── integration.test.js # End-to-end tests
+└── user.test.js        # Unit tests
 ```
 
 ## 🔒 Security & Workflow ##
