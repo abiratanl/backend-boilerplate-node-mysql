@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const UserModel = require('../models/userModel');
 const bcrypt = require('bcryptjs');
 
@@ -99,7 +100,7 @@ class UserController {
       const { name, email, password, role } = req.body;
 
       // 1. Basic Validation
-      if (!name || !email || !password) {
+      if (!name || !email) {
         return res.status(400).json({ status: 'fail', message: 'Preencha os campos obrigatórios.' });
       }
 
@@ -109,19 +110,36 @@ class UserController {
         return res.status(409).json({ status: 'fail', message: 'Email já utilizado.' });
       }
 
+      // 3. Generate Temporary Password (Ex: NOVAabc123)
+      const randomPart = crypto.randomBytes(3).toString('hex'); // gera 6 chars hex
+      const tempPassword = `NOVA${randomPart}`;
+
       // 3. Hash the password
       const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
+      const hashedPassword = await bcrypt.hash(tempPassword, salt);
 
       // 4. Create user
       const newUser = await UserModel.create({
         name,
         email,
         password: hashedPassword,
-        role
+        role,
+        is_active: true,
+        must_change_password: true
       });
+       // 5. MOCK ENVIO DE EMAIL
+      console.log('============================================');
+      console.log('📧 EMAIL MOCK (Boas Vindas)');
+      console.log(`Para: ${email}`);
+      console.log(`Sua senha temporária é: ${tempPassword}`);
+      console.log('Acesse o sistema e troque sua senha imediatamente.');
+      console.log('============================================');
 
-      res.status(201).json({ status: 'success', data: newUser });
+    res.status(201).json({ 
+      status: 'success', 
+      message: 'Usuário criado. A senha foi enviada por email.',
+      data: newUser 
+    });
     } catch (error) {
       console.error('Error in createUser:', error);
       res.status(500).json({ status: 'error', message: 'Erro interno do servidor.' });

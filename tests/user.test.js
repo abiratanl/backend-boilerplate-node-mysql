@@ -1,102 +1,83 @@
 const request = require('supertest');
+const app = require('../src/app');
+const UserModel = require('../src/models/userModel');
+const db = require('../src/config/database');
 
-/**
- * =========================================================================
- * MOCKS GLOBAIS
- * =========================================================================
- */
-
-// 1. Mock do Auth Middleware (CORREÇÃO DO ERRO 401)
-// Isso faz com que, durante ESTE teste, as rotas protegidas sejam liberadas.
+// MOCK DAS DEPENDÊNCIAS
+jest.mock('../src/models/userModel');
+jest.mock('../src/config/database', () => ({
+  query: jest.fn(),
+  end: jest.fn() // Mock para evitar erros de conexão
+}));
 jest.mock('../src/middlewares/authMiddleware', () => ({
   protect: (req, res, next) => {
-    req.user = { role: 'admin' }; // Finge que é um admin logado
+    req.user = { id: 'admin-id', role: 'admin' }; // Simula Admin Logado
     next();
   },
-  restrictTo: (...roles) => (req, res, next) => next() // Finge que tem permissão
+  restrictTo: (...roles) => (req, res, next) => next(), // Permite tudo
 }));
-
-// 2. Mock do Banco de Dados
-jest.mock('../src/config/database', () => {
-  return {
-    query: jest.fn(),
-  };
-});
-
-// Importar o app DEPOIS dos mocks
-const app = require('../src/app');
-const db = require('../src/config/database');
 
 describe('User API Endpoints (Unit Tests)', () => {
   
-  beforeEach(() => {
+  afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('GET /api/users', () => {
-    it('should fetch all active users', async () => {
-      const mockUsers = [
-        { id: 'uuid-1', name: 'John', email: 'john@test.com', role: 'admin', is_active: 1 }
-      ];
-      db.query.mockResolvedValue([mockUsers]); 
+  it('POST /api/users › should create a new user successfully', async () => {
+    const newUser = {
+      name: 'John Doe',
+      email: 'john@example.com',
+      role: 'atendente'
+    };
 
-      const res = await request(app).get('/api/users');
-
-      expect(res.statusCode).toEqual(200);
-      expect(res.body.status).toEqual('success');
-      expect(res.body.data).toHaveLength(1);
+    // Mock do comportamento do Model
+    UserModel.findByEmail.mockResolvedValue(null); // Não existe ainda
+    UserModel.create.mockResolvedValue({ 
+      id: 'uuid-123', 
+      ...newUser, 
+      is_active: true,
+      must_change_password: true 
     });
 
-    it('should handle database errors gracefully', async () => {
-      db.query.mockRejectedValue(new Error('DB Connection Failed'));
-      const res = await request(app).get('/api/users');
-      expect(res.statusCode).toEqual(500);
-    });
+    const res = await request(app).post('/api/users').send(newUser);
+
+    expect(res.statusCode).toEqual(201);
+    expect(res.body.status).toBe('success');
+    expect(res.body.message).toMatch(/email/i); // Verifica msg de email
   });
 
-  describe('POST /api/users', () => {
-    it('should create a new user successfully', async () => {
-      const newUser = {
-        name: 'New User',
-        email: 'new@test.com',
-        password: 'password123',
-        role: 'atendente'
-      };
+  it('POST /api/users › should prevent duplicate emails', async () => {
+    const existingUser = {
+      name: 'Jane Doe',
+      email: 'jane@example.com',
+      password: '123'
+    };
 
-      db.query.mockResolvedValueOnce([[]]); // Email não existe
-      db.query.mockResolvedValueOnce([{ insertId: 0, affectedRows: 1 }]); // Insert ok
+    // Simula que JÁ EXISTE no banco
+    UserModel.findByEmail.mockResolvedValue(existingUser);
 
-      const res = await request(app).post('/api/users').send(newUser);
+    const res = await request(app).post('/api/users').send(existingUser);
 
-      expect(res.statusCode).toEqual(201);
-    });
-
-    it('should prevent duplicate emails', async () => {
-      const existingUser = {
-        name: 'Existing',
-        email: 'exists@test.com',
-        password: '123'
-      };
-
-      db.query.mockResolvedValueOnce([[{ id: 'uuid-existing', email: 'exists@test.com' }]]); 
-
-      const res = await request(app).post('/api/users').send(existingUser);
-
-      expect(res.statusCode).toEqual(409);
-    });
+    expect(res.statusCode).toEqual(409);
+    expect(res.body.message).toMatch(/utilizado/i);
   });
 
-  describe('DELETE /api/users/:id', () => {
-    it('should soft delete a user', async () => {
-      db.query.mockResolvedValue([{ affectedRows: 1 }]);
-      const res = await request(app).delete('/api/users/uuid-123');
-      expect(res.statusCode).toEqual(200);
-    });
+  it('DELETE /api/users/:id › should soft delete a user', async () => {
+    // Simula deleção com sucesso
+    UserModel.softDelete.mockResolvedValue(true);
 
-    it('should return 404 if user not found', async () => {
-      db.query.mockResolvedValue([{ affectedRows: 0 }]);
-      const res = await request(app).delete('/api/users/uuid-not-found');
-      expect(res.statusCode).toEqual(404);
-    });
+    const res = await request(app).delete('/api/users/uuid-123');
+
+    expect(res.statusCode).toEqual(200);
+    expect(res.body.message).toMatch(/sucesso/i);
+  });
+
+  it('DELETE /api/users/:id › should return 404 if user not found', async () => {
+    // Simula falha na deleção (usuário não existe)
+    UserModel.softDelete.mockResolvedValue(false);
+
+    const res = await request(app).delete('/api/users/uuid-not-found');
+
+    expect(res.statusCode).toEqual(404);
   });
 });

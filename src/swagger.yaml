@@ -1,73 +1,121 @@
 openapi: 3.0.0
 info:
-  title: Node.js Boilerplate API
+  title: Backend Boilerplate API
+  description: API de gerenciamento de usuários com Autenticação JWT e RBAC.
   version: 1.0.0
-  description: API documentation for the Boilerplate
-  contact:
-    name: Developer Name
 servers:
-  - url: http://localhost:3000/api
-    description: Development server
+  - url: http://localhost:3000
+    description: Servidor Local
 
+# Definição do esquema de segurança (Token JWT)
 components:
-  schemas:
-    User:
-      type: object
-      required:
-        - name
-        - email
-        - password
-      properties:
-        id:
-          type: string
-          format: uuid
-          description: The auto-generated UUID of the user
-        name:
-          type: string
-          description: Full name
-        email:
-          type: string
-          format: email
-          description: Unique email address
-        role:
-          type: string
-          enum: [admin, proprietario, atendente]
-          default: atendente
-        is_active:
-          type: boolean
-          default: false
-      example:
-        id: "uuid-atend-001"
-        name: "Maria Silva"
-        email: "maria@loja.com"
-        role: "atendente"
-        is_active: true
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
-tags:
-  - name: Users
-    description: User management API
+# Segurança global (pode ser sobrescrita em cada rota)
+security:
+  - bearerAuth: []
 
 paths:
-  /users:
+  # ==========================
+  # AUTENTICAÇÃO (AUTH)
+  # ==========================
+  /api/auth/login:
+    post:
+      summary: Realizar Login (Obter Token)
+      tags: [Auth]
+      security: [] # Rota pública
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  example: admin@loja.com
+                password:
+                  type: string
+                  example: 123456
+      responses:
+        200:
+          description: Login realizado com sucesso
+        401:
+          description: Credenciais inválidas
+        429:
+          description: Muitas tentativas (Bloqueio temporário)
+
+  /api/auth/forgot-password:
+    post:
+      summary: Solicitar recuperação de senha
+      tags: [Auth]
+      security: [] # Rota pública
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  example: admin@loja.com
+      responses:
+        200:
+          description: Token enviado (simulado no console)
+
+  /api/auth/reset-password/{token}:
+    post:
+      summary: Definir nova senha
+      tags: [Auth]
+      security: [] # Rota pública
+      parameters:
+        - in: path
+          name: token
+          schema:
+            type: string
+          required: true
+          description: Token recebido por email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+                  example: novaSenha123
+      responses:
+        200:
+          description: Senha alterada com sucesso
+
+  # ==========================
+  # USUÁRIOS (USERS)
+  # ==========================
+  /api/users:
     get:
-      summary: Returns the list of all active users
+      summary: Listar todos os usuários (Apenas Admin)
       tags: [Users]
       responses:
         200:
-          description: The list of users
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/User'
+          description: Lista de usuários
+        403:
+          description: Acesso negado (Requer Admin)
+    
     post:
-      summary: Create a new user
+      summary: Criar um novo usuário (Apenas Admin)
       tags: [Users]
       requestBody:
         required: true
@@ -82,38 +130,42 @@ paths:
               properties:
                 name:
                   type: string
+                  example: Novo Funcionario
                 email:
                   type: string
+                  example: novo@loja.com
                 password:
                   type: string
+                  example: senha123
                 role:
                   type: string
                   enum: [admin, proprietario, atendente]
+                  example: atendente
       responses:
         201:
-          description: Created
+          description: Usuário criado
         409:
-          description: Email already in use
+          description: Email já existe
 
-  /users/{id}:
+  /api/users/{id}:
     get:
-      summary: Get a user by ID
+      summary: Buscar usuário por ID
       tags: [Users]
       parameters:
         - in: path
           name: id
           schema:
             type: string
-            format: uuid
           required: true
-          description: The user UUID
+          description: UUID do usuário
       responses:
         200:
-          description: The user data
+          description: Dados do usuário
         404:
-          description: User not found
+          description: Usuário não encontrado
+    
     put:
-      summary: Update a user
+      summary: Atualizar usuário (Apenas Admin)
       tags: [Users]
       parameters:
         - in: path
@@ -122,7 +174,6 @@ paths:
             type: string
           required: true
       requestBody:
-        required: true
         content:
           application/json:
             schema:
@@ -132,16 +183,12 @@ paths:
                   type: string
                 role:
                   type: string
-                  enum: [admin, proprietario, atendente]
-                is_active:
-                  type: boolean
       responses:
         200:
-          description: Updated successfully
-        404:
-          description: User not found
+          description: Atualizado com sucesso
+    
     delete:
-      summary: Soft delete a user
+      summary: Deletar usuário (Apenas Admin)
       tags: [Users]
       parameters:
         - in: path
@@ -151,6 +198,30 @@ paths:
           required: true
       responses:
         200:
-          description: User soft deleted successfully
-        404:
-          description: User not found or already deleted
+          description: Deletado com sucesso
+
+  # ==========================
+  # PERFIL (PROFILE)
+  # ==========================
+  /api/users/me:
+    get:
+      summary: Ver meu perfil (Usuário Logado)
+      tags: [Profile]
+      responses:
+        200:
+          description: Dados do perfil atual
+    put:
+      summary: Atualizar meu perfil (Nome apenas)
+      tags: [Profile]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Meu Nome Novo
+      responses:
+        200:
+          description: Perfil atualizado
