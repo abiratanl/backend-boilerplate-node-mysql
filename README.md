@@ -1,16 +1,20 @@
 # Backend Boilerplate (Node.js + MySQL + Docker) #
 
-A robust, production-ready boilerplate for building RESTful APIs using Node.js and MySQL. It features a fully Dockerized environment, JWT authentication, **Swagger documentation**, **Automated Testing**, Role-Based Access Control (RBAC), and a secure invite-only registration flow.
+A robust, production-ready boilerplate for building RESTful APIs using Node.js and MySQL. It features a fully Dockerized environment, JWT authentication, **Swagger documentation**, **Automated Testing**, Role-Based Access Control (RBAC), **Rate Limiting**, and a secure invite-only registration flow.
 
 ## 🚀 Key Features ##
 
 - **Dockerized Environment:** Zero-config setup with Docker & Docker Compose.
 - **MVC Architecture:** Clean separation of concerns (Controllers, Services, Models).
-- **Security First:** Implements `helmet`, `cors`, `bcryptjs` (hashing), and JWT strategies, and **Environment Variable Validation (Fail Fast)**.
-
+- **🛡️ Advanced Security:**
+  - **JWT Authentication:** Secure stateless authentication.
+  - **Rate Limiting:** Protection against DDoS (Global) and Brute-Force attacks (Login specific).
+  - **Password Hashing:** Uses `bcryptjs` for secure storage.
+  - **Helmet & CORS:** HTTP header security.
+- **🔄 Account Recovery:** Complete "Forgot Password" and "Reset Password" flow with token expiration logic calculated database-side.
 * 📚 **Fully Documented**: Interactive API documentation via **Swagger/OpenAPI 3.0**.
 
-* 🧪 **Automated Tests**: Integrated Unit and Integration testing suite using **Jest** and **Supertest**.
+- **🧪 Production-Grade Tests**: Comprehensive test suite (Unit, Integration, and Security) using **Jest** and **Supertest** running in band to prevent race conditions.
 
 * **Data Integrity**: Uses **UUIDs** for primary keys and implements **Soft Deletes** (logical exclusion) to preserve data history.
 - **RBAC (Role-Based Access Control):** Native support for roles: `admin`, `proprietario` (owner), and `atendente` (staff/attendant).
@@ -95,35 +99,34 @@ The API is fully documented using Swagger (OpenAPI 3.0). The definitions are mai
 
 Once the server is running, access the interactive documentation at:
 
-👉 http://localhost:3000/api-docs
+👉 **http://localhost:3000/api-docs**
 
 ---
 
 
 **🧪 Running Tests**
 
-This boilerplate comes with a complete test suite covering Unit Tests (using Mocks) and Integration Tests (using a test database).
+This boilerplate comes with a complete test suite covering:
 
-To run the tests locally:
+1. **Unit Tests**: Controller logic and mocks.
 
-Ensure dependencies are installed:
+2. **Integration Tests**: Real database operations (CRUD).
+
+3. **Security Tests**: Rate limiting verification and Password Reset flows.
+
+To run the tests locally (requires Node.js installed):
 
 `Bash`
 
 ```
+# Install dependencies
 npm install
 
-```
-
-Run the test command:
-
-`Bash`
-
-```
+# Run the test command:
 npm test
 
 ```
-Note: The integration tests require a database connection. Ensure your `.env` is configured correctly or that you have a MySQL instance running.
+Note: The `npm test` command is configured to run tests sequentially (`--runInBand`) to avoid database race conditions.
 
 ---
 
@@ -145,28 +148,45 @@ Role | Email | Password (Hash) |
 `Plaintext`
 ```
 src/
-├── config/         # Database connection pool & Swagger config
-├── controllers/    # Request handlers (Input/Output)
-├── middlewares/    # Auth, Validation, and RBAC logic
-├── models/         # Database queries (SQL), Soft Delete logic
+├── config/         # Database connection pool
+├── controllers/    # Request handlers (Auth, User)
+├── middlewares/    # Auth (JWT), Rate Limit, and RBAC logic
+├── models/         # Database queries (SQL)
 ├── routes/         # API Route definitions
-├── utils/          # Helper scripts (Env validation)
+├── utils/          # Helper scripts
 ├── app.js          # Express app setup
 ├── server.js       # Entry point
 └── swagger.yaml    # OpenAPI Documentation
 tests/
-├── integration.test.js # End-to-end tests
-└── user.test.js        # Unit tests
+├── auth.test.js           # Login & Token logic
+├── integration.test.js    # End-to-end DB tests
+├── password_reset.test.js # Forgot/Reset password flow
+├── ratelimit.test.js      # Brute-force protection tests
+└── user.test.js           # Unit tests (Mocked)
 ```
 
-## 🔒 Security & Workflow ##
+## 🔒 Security Features ##
 
-**Authentication**
+**1. Rate Limiting**
+
+- **Global API**: Limits IPs to 100 requests per 15 minutes.
+
+- **Login Endpoint**: Strict limit of 5 failed attempts per 15 minutes to prevent brute-force attacks.
+
+
+**2. Authentication Flow**
 
 Protected routes require a **Bearer Token** in the Authorization header.
 
 1. POST `/api/auth/login` to receive a token.
 2. Send header: `Authorization: Bearer <YOUR_TOKEN>`
+
+**3. Password Recovery**
+User requests a token via `POST /api/auth/forgot-password`.
+
+System generates a secure token with a database-side expiration (e.g., 10 minutes).
+
+User resets password via `POST /api/auth/reset-password/:token`.
 
 **User Registration (Invite Flow)**
 
