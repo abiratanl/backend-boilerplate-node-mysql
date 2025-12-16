@@ -1,10 +1,10 @@
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
-const YAML = require('yamljs'); 
+const YAML = require('yamljs');
 const userRoutes = require('./routes/userRoutes');
+const authRoutes = require('./routes/authRoutes'); // <--- Import Auth Routes
 
-// Carregar o ficheiro YAML
-const swaggerDocument = YAML.load('./src/swagger.yaml'); // <--- Path to the file
+const swaggerDocument = YAML.load('./src/swagger.yaml');
 
 const app = express();
 
@@ -15,9 +15,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /**
- * Documentation (Swagger)
+ * Documentation
  */
-// We passed the uploaded document directly.
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 /**
@@ -32,6 +31,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/users', userRoutes);
+app.use('/api/auth', authRoutes); // <--- Use Auth Routes
 
 /**
  * Global Error Handler
@@ -40,7 +40,7 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
     status: 'error',
-    message: 'Internal Server Error'
+    message: 'Erro interno do Servidor.'
   });
 });
 

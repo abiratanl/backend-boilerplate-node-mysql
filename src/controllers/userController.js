@@ -11,7 +11,7 @@ class UserController {
       res.status(200).json({ status: 'success', data: users });
     } catch (error) {
       console.error('Error in getAllUsers:', error);
-      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+      res.status(500).json({ status: 'error', message: 'Erro interno do servidor.' });
     }
   }
 
@@ -24,13 +24,13 @@ class UserController {
       const user = await UserModel.findById(id);
 
       if (!user) {
-        return res.status(404).json({ status: 'fail', message: 'User not found' });
+        return res.status(404).json({ status: 'fail', message: 'Usuário não encontrado.' });
       }
 
       res.status(200).json({ status: 'success', data: user });
     } catch (error) {
       console.error('Error in getUserById:', error);
-      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+      res.status(500).json({ status: 'error', message: 'Erro interno do servidor.' });
     }
   }
 
@@ -43,13 +43,13 @@ class UserController {
 
       // 1. Basic Validation
       if (!name || !email || !password) {
-        return res.status(400).json({ status: 'fail', message: 'Missing required fields' });
+        return res.status(400).json({ status: 'fail', message: 'Preencha os campos obrigatórios.' });
       }
 
       // 2. Check for duplicate email
       const existingUser = await UserModel.findByEmail(email);
       if (existingUser) {
-        return res.status(409).json({ status: 'fail', message: 'Email already in use' });
+        return res.status(409).json({ status: 'fail', message: 'Email já utilizado.' });
       }
 
       // 3. Hash the password
@@ -67,7 +67,7 @@ class UserController {
       res.status(201).json({ status: 'success', data: newUser });
     } catch (error) {
       console.error('Error in createUser:', error);
-      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+      res.status(500).json({ status: 'error', message: 'Erro interno do servidor.' });
     }
   }
 
@@ -82,13 +82,13 @@ class UserController {
       const updated = await UserModel.update(id, { name, role, is_active });
 
       if (!updated) {
-        return res.status(404).json({ status: 'fail', message: 'User not found or no changes made' });
+        return res.status(404).json({ status: 'fail', message: 'Usuário não encontrado ou nenhuma alteração realizada.' });
       }
 
-      res.status(200).json({ status: 'success', message: 'User updated successfully' });
+      res.status(200).json({ status: 'success', message: 'Usuário atualizado com sucesso' });
     } catch (error) {
       console.error('Error in updateUser:', error);
-      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+      res.status(500).json({ status: 'error', message: 'Erro interno do servidor.' });
     }
   }
 
@@ -101,13 +101,13 @@ class UserController {
       const deleted = await UserModel.softDelete(id);
 
       if (!deleted) {
-        return res.status(404).json({ status: 'fail', message: 'User not found or already deleted' });
+        return res.status(404).json({ status: 'fail', message: 'Usuário não encontrado ou já deletado.' });
       }
 
-      res.status(200).json({ status: 'success', message: 'User deleted successfully' });
+      res.status(200).json({ status: 'success', message: 'Usuário deletado com sucesso!' });
     } catch (error) {
       console.error('Error in deleteUser:', error);
-      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+      res.status(500).json({ status: 'error', message: 'Erro interno do servidor.' });
     }
   }
 }
