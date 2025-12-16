@@ -1,17 +1,21 @@
 const express = require('express');
-const userController = require('../controllers/userController');
-const { protect, restrictTo } = require('../middlewares/authMiddleware'); // <--- Import Middleware
+const UserController = require('../controllers/userController');
+const { protect, restrictTo } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
-// Apply protection to all routes below this line
+// All routes below are protected
 router.use(protect);
 
-// Routes definitions
-router.get('/', restrictTo('admin'), userController.getAllUsers); // Only Admin can list all
-router.get('/:id', userController.getUserById);
-router.post('/', restrictTo('admin'), userController.createUser); // Only Admin can create
-router.put('/:id', userController.updateUser);
-router.delete('/:id', restrictTo('admin'), userController.deleteUser);
+// --- Current User Routes (MUST BE BEFORE /:id) ---
+router.get('/me', UserController.getMe);
+router.put('/me', UserController.updateMe);
+
+// --- Admin / Generic Routes ---
+router.get('/', restrictTo('admin'), UserController.getAllUsers);
+router.get('/:id', UserController.getUserById); // If /me was below this, express would think 'me' is an id
+router.post('/', restrictTo('admin'), UserController.createUser);
+router.put('/:id', restrictTo('admin'), UserController.updateUser);
+router.delete('/:id', restrictTo('admin'), UserController.deleteUser);
 
 module.exports = router;

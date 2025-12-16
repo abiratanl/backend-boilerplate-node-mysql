@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
     -- Roles: admin, proprietario (owner), atendente (staff)
     role ENUM('admin', 'proprietario', 'atendente') NOT NULL DEFAULT 'atendente',
     is_active BOOLEAN DEFAULT FALSE,
+    password_reset_token VARCHAR(255) DEFAULT NULL,
+    password_reset_expires TIMESTAMP NULL DEFAULT NULL,
     deleted_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -40,6 +42,8 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255),
     role ENUM('admin', 'proprietario', 'atendente') NOT NULL DEFAULT 'atendente',
     is_active BOOLEAN DEFAULT FALSE,
+    password_reset_token VARCHAR(255) DEFAULT NULL,
+    password_reset_expires TIMESTAMP NULL DEFAULT NULL,
     deleted_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

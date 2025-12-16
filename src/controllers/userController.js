@@ -3,6 +3,63 @@ const bcrypt = require('bcryptjs');
 
 class UserController {
   /**
+   * Get Current User Profile (Locked to the Token ID)
+   */
+  static async getMe(req, res) {
+    try {
+      // req.user.id comes from the authMiddleware
+      const userId = req.user.id;
+      const user = await UserModel.findById(userId);
+
+      if (!user) {
+        return res.status(404).json({ status: 'fail', message: 'Usuário não encontrado.' });
+      }
+
+      res.status(200).json({ status: 'success', data: user });
+    } catch (error) {
+      console.error('Error in getMe:', error);
+      res.status(500).json({ status: 'error', message: 'Erro interno do servidor.' });
+    }
+  }
+
+  /**
+   * Update Current User Profile (Restricted fields)
+   */
+  static async updateMe(req, res) {
+    try {
+      const userId = req.user.id;
+      const { name } = req.body;
+
+      // Security: Prevent updating sensitive fields via this route
+      if (req.body.password || req.body.role || req.body.email) {
+        return res.status(400).json({ 
+          status: 'fail', 
+          message: 'Esta rota serve apenas para atualizar dados do perfil (nome). Use rotas específicas para senha ou email.' 
+        });
+      }
+
+      // Update only allowed fields
+      const updated = await UserModel.update(userId, { name });
+
+      if (!updated) {
+        return res.status(404).json({ status: 'fail', message: 'Usuário não encontrado ou nenhuma alteração realizada.' });
+      }
+
+      // Fetch updated data to return to the frontend
+      const updatedUser = await UserModel.findById(userId);
+
+      res.status(200).json({ 
+        status: 'success', 
+        message: 'Perfil atualizado com sucesso', 
+        data: updatedUser 
+      });
+    } catch (error) {
+      console.error('Error in updateMe:', error);
+      res.status(500).json({ status: 'error', message: 'Erro interno do servidor.' });
+    }
+  }
+
+  /**
    * Get all active users.
    */
   static async getAllUsers(req, res) {
