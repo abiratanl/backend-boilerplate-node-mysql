@@ -58,6 +58,23 @@ exports.login = async (req, res) => {
       });
     }
 
+    // =================================================================
+    //                🛑 TOLL: REQUIRING PASSWORD CHANGE
+    // =================================================================
+    if (user.must_change_password) {
+      // We generated a token, but received a specific 403 (Forbidden) error.
+      // The frontend will read the code 'PASSWORD_CHANGE_REQUIRED' and redirect to the password change screen.
+      const tempToken = signToken(user.id, user.email, user.role);
+
+      return res.status(403).json({
+        status: 'fail',
+        code: 'PASSWORD_CHANGE_REQUIRED', // The frontend uses this to know what to do.
+        message: 'É necessário alterar sua senha no primeiro acesso.',
+        token: tempToken // Temporary token to enable the exchange request.
+      });
+    }
+    // =================================================================
+
     // 5. If everything ok, send token to client
     const token = signToken(user.id, user.email, user.role);
 
@@ -185,5 +202,56 @@ exports.resetPassword = async (req, res) => {
   } catch (error) {
     console.error('Reset Password Error:', error);
     res.status(500).json({ status: 'error', message: 'Erro interno' });
+  }  
+};
+
+/**
+ * @desc    Trocar senha (pode ser usado no primeiro acesso ou no perfil)
+ * @route   POST /api/auth/change-password
+ * @access  Private (Requer Token)
+ */
+exports.changePassword = async (req, res) => {
+  try {
+    // 1. Pegamos a senha atual e a nova do corpo
+    const { currentPassword, newPassword } = req.body;
+    
+    // 2. O ID vem do Token JWT (graças ao middleware 'protect')
+    const userId = req.user.id;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Informe a senha atual e a nova senha.' });
+    }
+
+    // 3. Buscamos o usuário no banco para checar a senha atual
+    const [rows] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
+    const user = rows[0];
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+
+    // 4. Verifica se a "Senha Atual" bate com a do banco
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'A senha atual está incorreta.' });
+    }
+
+    // 5. Criptografa a NOVA senha
+    const newHash = await bcrypt.hash(newPassword, 10);
+
+    // 6. Atualiza no banco e REMOVE a flag must_change_password
+    await db.query(
+      'UPDATE users SET password = ?, must_change_password = FALSE WHERE id = ?',
+      [newHash, userId]
+    );
+
+    res.status(200).json({ 
+      status: 'success', 
+      message: 'Senha alterada com sucesso! Você já pode usar o sistema normalmente.' 
+    });
+
+  } catch (error) {
+    console.error('Change Password Error:', error);
+    res.status(500).json({ message: 'Erro interno ao trocar senha.' });
   }
 };

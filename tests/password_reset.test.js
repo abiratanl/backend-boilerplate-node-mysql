@@ -27,7 +27,7 @@ describe('PASSWORD RESET & ME PROFILE TESTS', () => {
       const hash = await bcrypt.hash(testUser.password, 10);
 
       await db.query(
-        'INSERT INTO users (id, name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, true)',
+        'INSERT INTO users (id, name, email, password, role, is_active, must_change_password) VALUES (?, ?, ?, ?, ?, true, false)',
         [testUser.id, testUser.name, testUser.email, hash, testUser.role]
       );
     }

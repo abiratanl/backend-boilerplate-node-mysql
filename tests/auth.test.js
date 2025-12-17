@@ -27,8 +27,8 @@ describe('AUTHENTICATION (AUTH) TESTS', () => {
     try {
       const hashedPassword = await bcrypt.hash(testUser.password, 10);
       const insertQuery = `
-        INSERT INTO users (id, name, email, password, role, is_active)
-        VALUES (?, ?, ?, ?, ?, true)
+        INSERT INTO users (id, name, email, password, role, is_active, must_change_password)
+        VALUES (?, ?, ?, ?, ?, true, false)
       `;
       await db.query(insertQuery, [
         testUser.id,

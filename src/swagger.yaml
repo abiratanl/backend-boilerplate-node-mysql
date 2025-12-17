@@ -100,6 +100,35 @@ paths:
       responses:
         200:
           description: Senha alterada com sucesso
+  
+  /api/auth/change-password:
+    post:
+      summary: Trocar Senha (Obrigatório no 1º acesso)
+      tags: [Auth]
+      security:
+        - bearerAuth: []  # <--- Requer o cadeadinho fechado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                  example: NOVA8f2a1b
+                  description: A senha temporária recebida
+                newPassword:
+                  type: string
+                  example: MinhaNovaSenhaSegura123
+      responses:
+        200:
+          description: Senha alterada e conta desbloqueada
+        401:
+          description: Senha atual incorreta
 
   # ==========================
   # USUÁRIOS (USERS)

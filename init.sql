@@ -19,8 +19,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Insere usuários padrão APENAS no banco de desenvolvimento
-INSERT INTO users (id, name, email, password, role, is_active, must_change_password) VALUES 
-('uuid-admin-001', 'System Administrator', 'admin@loja.com', '$2a$10$Presj4e0w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.', 'admin', TRUE, FALSE),
+ INSERT INTO users (id, name, email, password, role, is_active, must_change_password) VALUES 
+-- ('uuid-admin-001', 'System Administrator', 'admin@loja.com', '$2a$10$Presj4e0w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.', 'admin', TRUE, FALSE),
 ('uuid-prop-001', 'Store Owner', 'dono@loja.com', '$2a$10$Presj4e0w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.', 'proprietario', TRUE, FALSE),
 ('uuid-atend-001', 'Standard Staff', 'atendente@loja.com', '$2a$10$Presj4e0w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.', 'atendente', TRUE, FALSE);
 
