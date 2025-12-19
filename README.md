@@ -1,8 +1,22 @@
+<a id=summary></a>
+<br>
 # Backend Boilerplate (Node.js + MySQL + Docker) #
 
 A robust, production-ready boilerplate for building RESTful APIs using Node.js and MySQL. It features a fully Dockerized environment, JWT authentication, **Swagger documentation**, **Automated Testing**, Role-Based Access Control (RBAC), **Rate Limiting**, and a secure invite-only registration flow.
+<br>
 
-## 🚀 Key Features ##
+## 📋 Summary ##
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [API Documentation](#api-documentation)
+- [Project Structure](#project-structure)
+- [Security Features](#security-features)
+- [Setup for a New Project](#customization)
+-  [Troubleshooting](#troubleshooting)
+<br><a id=key-features></a><br>
+
+## 🚀  Key Features &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [⬆️](#summary) ##
 
 - **Dockerized Environment:** Zero-config setup with Docker & Docker Compose.
 - **MVC Architecture:** Clean separation of concerns (Controllers, Services, Models).
@@ -21,7 +35,9 @@ A robust, production-ready boilerplate for building RESTful APIs using Node.js a
 - **Invite-Only Workflow:** Public registration is disabled. Users are created via admin invites and activate their accounts via token.
 - **Database Seeding:** Automatic database creation and population via `init.sql`.
 
-## 🛠️ Tech Stack ##
+<br><a id=tech-stack></a><br>
+
+## 🛠️ Tech Stack &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [⬆️](#summary) ##
 
 - **Runtime:** Node.js
 
@@ -38,8 +54,9 @@ A robust, production-ready boilerplate for building RESTful APIs using Node.js a
 - **Dev Tools:** Nodemon (configured for Docker hot-reloading)
 
 ---
+<br><a id=getting-started></a><br>
 
-### 🏁 Getting Started ###
+## 🏁 Getting Started &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [⬆️](#summary) ##
 
  **Prerequisites**
 
@@ -92,8 +109,9 @@ Start the application and the database containers:
 The server will start at: `http://localhost:3000`
 
 ---
+<br><a id=api-documentation></a><br>
 
-### 📚 API Documentation ###
+## 📚 API Documentation &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [⬆️](#summary) ##
 
 The API is fully documented using Swagger (OpenAPI 3.0). The definitions are maintained in a clean `src/swagger.yaml` file.
 
@@ -142,10 +160,11 @@ Role | Email | Password (Hash) |
 | **Atendente** (Staff) | atendente@loja.com | 123456|
 
 ---
+<br><a id=project-structure></a><br>
 
-## 📂 Project Structure ##
+## 📂 Project Structure &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [⬆️](#summary) ##
 
-`Plaintext`
+`Plaintext` 
 ```
 src/
 ├── config/         # Database connection pool
@@ -164,8 +183,9 @@ tests/
 ├── ratelimit.test.js      # Brute-force protection tests
 └── user.test.js           # Unit tests (Mocked)
 ```
+<br><a id=security-features></a><br>
 
-## 🔒 Security Features ##
+## 🔒 Security Features &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [⬆️](#summary) ##
 
 **1. Rate Limiting**
 
@@ -195,8 +215,9 @@ There is no public "Sign Up".
 2. System generates a unique token.
 3. User accesses the frontend with the link and sets their password via `/api/auth/complete-registration`.
 ---
+<br><a id=customization></a><br>
 
-### ⚙️ Customization (Setup for a New Project) ###
+## ⚙️ Customization (Setup for a New Project) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [⬆️](#summary) ##
 
 If you are cloning this boilerplate to start a brand new project, follow these steps to detach it from the template and configure the database correctly:
 
@@ -261,7 +282,45 @@ git add .
 git commit -m "initial commit"
 ```
 ---
+<br><a id=troubleshooting></a><br>
 
+## 🛠 Troubleshooting   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [⬆️](#summary) ##
+
+**MySQL Port Conflict (3306)**
+
+If you already have a MySQL instance running locally on port **3306**, the Docker container will fail to start.
+
+**Sintoma**:  The `docker compose up` command displays the error: `Bind for 0.0.0.0:3306 failed: port is already allocated`.
+
+*Solução*:
+
+1. In the `docker-compose.yml` file, modify the ports section of the database service:
+
+`YAML`
+```
+ports:
+  - "3307:3306" # Map port 3307 from your PC to port 3306 on Docker.
+  ```
+2. In your `.env` file, update:
+
+`Snippet de código`
+```
+DB_PORT=3307
+DB_HOST=127.0.0.1
+```
+
+The test script (`npm test`) is already configured to automatically attempt the connection via `127.0.0.1:3307` to avoid conflicts.
+
+**Connection Error During Tests (ECONNREFUSED)**
+
+If tests fail when trying to connect to `127.0.0.1:3306` even with Docker running:
+
+Check if the `your-application-name-db-1` container is active: `docker ps` command.
+
+Make sure the `src/config/database.js` file is reading the `process.env.DB_PORT` variable.
+
+---
+<br>
 ### 🤝 Contributing ###
 
 1. Create a feature branch (git checkout -b feature/amazing-feature)
