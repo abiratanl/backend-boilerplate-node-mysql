@@ -1,11 +1,12 @@
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
-const YAML = require('yamljs');
+const swaggerSpec = require('./config/swagger');
+//const YAML = require('yamljs');
 
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes'); // <--- Import Auth Routes
 const { apiLimiter } = require('./middlewares/rateLimitMiddleware');
-const swaggerDocument = YAML.load('./src/swagger.yaml');
+//const swaggerDocument = YAML.load('./src/swagger.yaml');
 
 const app = express();
 
@@ -18,7 +19,12 @@ app.use(express.urlencoded({ extended: true }));
 /**
  * Documentation
  */
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+//app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Apply Global Rate Limiter to all API routes
 app.use('/api', apiLimiter);

@@ -1,7 +1,7 @@
 {
   "name": "backend-boilerplate",
   "version": "1.0.0",
-  "description": "",
+  "description": "Professional foundation for Node.js APIs",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -10,7 +10,7 @@
     "seed:admin": "node src/scripts/createAdmin.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Your name/App",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
