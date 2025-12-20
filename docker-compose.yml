@@ -1,33 +1,43 @@
 services:
-  api:
-    build: .
-    ports:
-      - "3000:3000"
-    volumes:
-      - .:/app
-      - /app/node_modules
-    environment:
-      - DB_HOST=db  # Nome do serviço abaixo
-      - DB_USER=root
-      - DB_PASSWORD=root
-      - DB_NAME=loja_db
-      - PORT=3000
-    depends_on:
-      - db
-
+  # Database Service
   db:
     image: mysql:8.0
-    command: --default-authentication-plugin=mysql_native_password --default-time-zone='+00:00'
+    # The container name will be prefixed by the project name automatically
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: loja_db
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
     ports:
-      - "3306:3306"
+      # Maps EXTERNAL_PORT from host to INTERNAL_PORT in container
+      - "${DB_PORT_EXTERNAL:-3306}:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
-      # A LINHA MÁGICA: Executa o init.sql na criação do container
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      # Generic volume name: Docker handles the project prefix
+      - db_data:/var/lib/mysql
+      # Entrypoint for database initialization
+      - "./init.sql:/docker-entrypoint-initdb.d/init.sql"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # Backend API Service
+  api:
+    build: .
+    # Uses the PORT from .env or defaults to 3000
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    env_file:
+      - .env
+    volumes:
+      # Sync source code for development
+      - .:/home/node/app
+      # Anonymous volume to protect node_modules from being overwritten by the host
+      - /home/node/app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+
+# Define the generic volume used by the db service
 volumes:
-  mysql_data:
+  db_data:

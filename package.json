@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon -L src/server.js",
-    "test": "cross-env NODE_ENV=test DB_NAME=loja_test DB_HOST=127.0.0.1 jest --runInBand --forceExit",
+    "test": "cross-env NODE_ENV=test jest --runInBand --forceExit",
     "seed:admin": "node src/scripts/createAdmin.js"
   },
   "keywords": [],
