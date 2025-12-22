@@ -133,7 +133,6 @@ exports.forgotPassword = async (req, res) => {
     const passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
     // 4. Save to Database using MySQL Time (DATE_ADD)
-    // Mudança aqui: Removemos a data do JS e usamos SQL direto
     await db.query(
       `UPDATE users 
        SET password_reset_token = ?, 
@@ -206,23 +205,23 @@ exports.resetPassword = async (req, res) => {
 };
 
 /**
- * @desc    Trocar senha (pode ser usado no primeiro acesso ou no perfil)
+ * @desc    Change password (can be used on first login or in profile)
  * @route   POST /api/auth/change-password
  * @access  Private (Requer Token)
  */
 exports.changePassword = async (req, res) => {
   try {
-    // 1. Pegamos a senha atual e a nova do corpo
+    // 1. We retrieved the current password and the new password from the body.
     const { currentPassword, newPassword } = req.body;
     
-    // 2. O ID vem do Token JWT (graças ao middleware 'protect')
+    // 2. The ID comes from the JWT Token (thanks to the 'protect' middleware).
     const userId = req.user.id;
 
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ message: 'Informe a senha atual e a nova senha.' });
     }
 
-    // 3. Buscamos o usuário no banco para checar a senha atual
+    // 3. We searched for the user in the database to check their current password.
     const [rows] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
     const user = rows[0];
 
@@ -230,16 +229,16 @@ exports.changePassword = async (req, res) => {
       return res.status(404).json({ message: 'Usuário não encontrado.' });
     }
 
-    // 4. Verifica se a "Senha Atual" bate com a do banco
+    // 4. Check if the "Current Password" matches the one on file with the bank.
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: 'A senha atual está incorreta.' });
     }
 
-    // 5. Criptografa a NOVA senha
+    // 5. Encrypt the NEW password
     const newHash = await bcrypt.hash(newPassword, 10);
 
-    // 6. Atualiza no banco e REMOVE a flag must_change_password
+    // 6. Update the database and remove the must_change_password flag.
     await db.query(
       'UPDATE users SET password = ?, must_change_password = FALSE WHERE id = ?',
       [newHash, userId]

@@ -16,12 +16,12 @@ const options = {
     servers: [
       {
         // Use the .env port to automatically assemble the URL.
-        url: `http://localhost:${process.env.PORT || 3000}/api`,
+        url: `http://localhost:${process.env.PORT || 3000}/`,
         description: 'Development server',
       },
     ],
   },
-  // Usando caminhos absolutos baseados na localização deste arquivo
+  // Using absolute paths based on the location of this file.
   apis: [
     path.join(__dirname, '../routes/*.js'),   // Sobe uma pasta e entra em routes
     path.join(__dirname, '../../swagger.yaml') // Sobe duas pastas para achar o yaml na raiz

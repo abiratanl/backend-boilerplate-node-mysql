@@ -153,7 +153,7 @@ paths:
                   example: New Employee
                 email:
                   type: string
-                  example: novo@loja.com
+                  example: novo@store.com
                 password:
                   type: string
                   example: senha123
@@ -163,9 +163,9 @@ paths:
                   example: atendente
       responses:
         201:
-          description: Usuário criado
+          description: User created
         409:
-          description: Email já existe
+          description: Email already exists.
 
   /api/users/{id}:
     get:

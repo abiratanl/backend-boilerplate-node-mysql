@@ -24,15 +24,16 @@ services:
   # Backend API Service
   api:
     build: .
-    # Uses the PORT from .env or defaults to 3000
     ports:
       - "${PORT:-3000}:${PORT:-3000}"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+    # ---------------------------------
     env_file:
       - .env
     volumes:
-      # Sync source code for development
       - .:/home/node/app
-      # Anonymous volume to protect node_modules from being overwritten by the host
       - /home/node/app/node_modules
     depends_on:
       db:

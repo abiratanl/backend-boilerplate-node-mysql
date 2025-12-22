@@ -3,18 +3,18 @@ const app = require('../src/app');
 const UserModel = require('../src/models/userModel');
 const db = require('../src/config/database');
 
-// MOCK DAS DEPENDÊNCIAS
+// MOCK OF THE dependencies
 jest.mock('../src/models/userModel');
 jest.mock('../src/config/database', () => ({
   query: jest.fn(),
-  end: jest.fn() // Mock para evitar erros de conexão
+  end: jest.fn() // Mock to avoid connection errors
 }));
 jest.mock('../src/middlewares/authMiddleware', () => ({
   protect: (req, res, next) => {
     req.user = { id: 'admin-id', role: 'admin' }; // Simula Admin Logado
     next();
   },
-  restrictTo: (...roles) => (req, res, next) => next(), // Permite tudo
+  restrictTo: (...roles) => (req, res, next) => next(), // It allows everything.
 }));
 
 describe('User API Endpoints (Unit Tests)', () => {
@@ -30,7 +30,7 @@ describe('User API Endpoints (Unit Tests)', () => {
       role: 'atendente'
     };
 
-    // Mock do comportamento do Model
+    // Mock of the Model's behavior
     UserModel.findByEmail.mockResolvedValue(null); // Não existe ainda
     UserModel.create.mockResolvedValue({ 
       id: 'uuid-123', 
@@ -53,7 +53,7 @@ describe('User API Endpoints (Unit Tests)', () => {
       password: '123'
     };
 
-    // Simula que JÁ EXISTE no banco
+    // It simulates that it ALREADY EXISTS in the database.
     UserModel.findByEmail.mockResolvedValue(existingUser);
 
     const res = await request(app).post('/api/users').send(existingUser);
@@ -63,7 +63,7 @@ describe('User API Endpoints (Unit Tests)', () => {
   });
 
   it('DELETE /api/users/:id › should soft delete a user', async () => {
-    // Simula deleção com sucesso
+    // Simulated deletion successfully.
     UserModel.softDelete.mockResolvedValue(true);
 
     const res = await request(app).delete('/api/users/uuid-123');
@@ -73,7 +73,7 @@ describe('User API Endpoints (Unit Tests)', () => {
   });
 
   it('DELETE /api/users/:id › should return 404 if user not found', async () => {
-    // Simula falha na deleção (usuário não existe)
+    // Simulates a deletion failure (user does not exist)
     UserModel.softDelete.mockResolvedValue(false);
 
     const res = await request(app).delete('/api/users/uuid-not-found');

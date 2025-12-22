@@ -79,8 +79,8 @@ describe('PASSWORD RESET & ME PROFILE TESTS', () => {
     const knownToken = 'my-secret-reset-token';
     const hashedToken = crypto.createHash('sha256').update(knownToken).digest('hex');
     
-    // CORREÇÃO: Usamos DATE_ADD(NOW(), ...) para garantir consistência de Timezone com o MySQL
-    // Em vez de calcular a data no JS.
+    // We use DATE_ADD(NOW(), ...) to ensure timezone consistency with MySQL.
+    // Instead of calculating the date in JS.
     await db.query(
       `UPDATE users 
        SET password_reset_token = ?, 
@@ -94,14 +94,14 @@ describe('PASSWORD RESET & ME PROFILE TESTS', () => {
       .post(`/api/auth/reset-password/${knownToken}`)
       .send({ password: 'newpassword789' });
 
-    // Debug: Se falhar, mostre o erro no console
+    // Debug: If it fails, display the error in the console.
     if (res.statusCode !== 200) {
       console.error('Reset Failed:', res.body);
     }
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.message).toMatch(/sucesso/i); // Ajustado para corresponder à sua mensagem em PT
-
+    expect(res.body.message).toMatch(/sucesso/i); 
+    
     // 3. Verify Login with NEW password
     const loginRes = await request(app).post('/api/auth/login').send({
       email: testUser.email, password: 'newpassword789'

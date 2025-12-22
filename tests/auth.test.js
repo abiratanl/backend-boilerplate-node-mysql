@@ -1,4 +1,4 @@
-// 1. CARREGAR VARIÁVEIS DE AMBIENTE (Crucial para conectar no banco)
+// 1. LOAD ENVIRONMENT VARIABLES (Crucial for connecting to the database)
 require('dotenv').config(); 
 
 const request = require('supertest');
@@ -19,7 +19,7 @@ let authToken;
 
 describe('AUTHENTICATION (AUTH) TESTS', () => {
   beforeAll(async () => {
-    // Limpa antes de começar para evitar conflitos
+    // Clean up before you start to avoid conflicts.
     if (db && db.query) {
         await db.query('DELETE FROM users WHERE email = ?', [testUser.email]);
     }
@@ -46,7 +46,7 @@ describe('AUTHENTICATION (AUTH) TESTS', () => {
   afterAll(async () => {
     // Limpeza final
     await db.query('DELETE FROM users WHERE email = ?', [testUser.email]);
-    // Opcional: fechar conexão se necessário, mas cuidado com conflito de pool
+    // Optional: Close the connection if necessary, but beware of pool conflicts.
     // await db.end(); 
   });
 

@@ -1,4 +1,4 @@
-// 1. FORÇAR A VARIÁVEL ANTES DE TUDO
+// 1. FORCE THE VARIABLE FIRST OF ALL
 process.env.TEST_RATE_LIMIT = 'true'; 
 
 require('dotenv').config();
@@ -13,7 +13,7 @@ describe('SECURITY: Rate Limiting', () => {
       password: 'wrongpassword'
     };
 
-    // Tentar 5 vezes (limite máximo permitido)
+    // Try 5 times (maximum allowed)
     for (let i = 1; i <= 5; i++) {
       const res = await request(app).post('/api/auth/login').send(credentials);
       // Esperamos 401 (Senha incorreta) ou 400, mas NÃO 429 ainda

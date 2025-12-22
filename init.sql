@@ -1,8 +1,8 @@
 -- ==========================================
--- 1. AMBIENTE DE DESENVOLVIMENTO (loja_db)
+-- 1. DEVELOPMENT ENVIRONMENT (store_db)
 -- ==========================================
-CREATE DATABASE IF NOT EXISTS loja_db;
-USE loja_db;
+CREATE DATABASE IF NOT EXISTS store_db;
+USE store_db;
 
 CREATE TABLE IF NOT EXISTS users (
     id CHAR(36) PRIMARY KEY,
@@ -18,7 +18,6 @@ CREATE TABLE IF NOT EXISTS users (
     deleted_at TIMESTAMP NULL
 );
 
--- Insere usuários padrão APENAS no banco de desenvolvimento
  INSERT INTO users (id, name, email, password, role, is_active, must_change_password) VALUES 
 -- ('uuid-admin-001', 'System Administrator', 'admin@loja.com', '$2a$10$Presj4e0w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.', 'admin', TRUE, FALSE),
 ('uuid-prop-001', 'Store Owner', 'dono@loja.com', '$2a$10$Presj4e0w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.w8.', 'proprietario', TRUE, FALSE),
@@ -26,12 +25,12 @@ CREATE TABLE IF NOT EXISTS users (
 
 
 -- ==========================================
--- 2. AMBIENTE DE TESTES (loja_test)
+-- 2. TEST ENVIRONMENT (test_store)
 -- ==========================================
-CREATE DATABASE IF NOT EXISTS loja_test;
-USE loja_test;
+CREATE DATABASE IF NOT EXISTS test_store;
+USE test_store;
 
--- Recria a MESMA tabela, mas vazia (sem INSERTS) para os testes usarem
+-- Recreate the SAME table, but empty (without INSERTS) for the tests to use.
 CREATE TABLE IF NOT EXISTS users (
     id CHAR(36) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,

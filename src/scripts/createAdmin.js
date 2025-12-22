@@ -66,7 +66,7 @@ const createAdminUser = async () => {
     console.error('❌ Erro ao criar admin:', error);
     process.exit(1);
   } finally {
-    // Fecha a conexão com o banco para encerrar o script
+    // Close the connection to the database to terminate the script.
     // Since we are using a pool, we need to terminate the process or the connection.
     process.exit(0);
   }

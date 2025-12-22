@@ -5,12 +5,22 @@ require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const mysql = require('mysql2/promise');
 
 const getPort = () => {
-    // If we are in test mode, we prioritize the external port from .env
+    // 1. If we are in TEST mode, prioritize the external port.
     if (process.env.NODE_ENV === 'test') {
-        // Fallback to 3307 if the variable is missing, but try to use the one from .env first
         return process.env.DB_PORT_EXTERNAL ? parseInt(process.env.DB_PORT_EXTERNAL) : 3307;
     }
-    // Inside Docker, use the standard internal port
+
+    // 2. If the host is 'db' (Docker), ALWAYS use 3306.
+    // This prevents rule 3 (below) from being activated inside the container.
+    if (process.env.DB_HOST === 'db') {
+        return 3306;
+    }
+
+    // 3. If the host is local, use the external port (useful for scripts outside of Docker).
+    if (process.env.DB_HOST === '127.0.0.1' && process.env.DB_PORT_EXTERNAL) {
+        return parseInt(process.env.DB_PORT_EXTERNAL);
+    }
+
     return process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306;
 };
 

@@ -13,10 +13,10 @@ const apiLimiterConfig = rateLimit({
 
 const loginLimiterConfig = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: 5, // Bloqueia após 5 tentativas
+  max: 5, // Blocks after 5 attempts.
   message: {
     status: 'error',
-    message: 'Muitas tentativas de login. Tente novamente em mais tarde.'
+    message: 'Muitas tentativas de login. Tente novamente mais tarde.'
   }
 });
 
