@@ -54,5 +54,6 @@ coverage/
 # --- Temporary Development Files ---
 
 test-upload.js
+test-avatar-upload.js
 temp/
 tmp/

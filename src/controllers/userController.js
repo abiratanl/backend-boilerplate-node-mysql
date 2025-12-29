@@ -1,6 +1,8 @@
 const crypto = require('crypto');
 const UserModel = require('../models/userModel');
 const bcrypt = require('bcryptjs');
+const db = require('../config/database'); 
+const { uploadImage } = require('../services/uploadService');
 
 class UserController {
   /**
@@ -196,6 +198,43 @@ class UserController {
       res.status(500).json({ status: 'error', message: 'Erro interno do servidor.' });
     }
   }
-}
+
+  static async updateAvatar(req, res) {
+    try {
+      // 1. Verificação do arquivo
+      if (!req.file) {
+        return res.status(400).json({ 
+          status: 'fail', 
+          message: 'Por favor, envie uma imagem válida.' 
+        });
+      }
+
+      // 2. Upload para o Cloudflare R2
+      // O req.file vem do Multer e 'avatars' é a pasta no bucket
+      const avatarUrl = await uploadImage(req.file, 'avatars');
+
+      // 3. Atualizar no Banco de Dados
+      // Nota: Idealmente você moveria essa query para o UserModel, mas aqui funciona perfeitamente
+      const userId = req.user.id; // O ID vem do middleware 'protect'
+      await db.execute('UPDATE users SET avatar = ? WHERE id = ?', [avatarUrl, userId]);
+
+      // 4. Resposta de Sucesso
+      res.status(200).json({ 
+        status: 'success', 
+        message: 'Avatar atualizado com sucesso!',
+        data: {
+          avatar: avatarUrl 
+        }
+      });
+
+    } catch (error) {
+      console.error('Error in updateAvatar:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Erro interno do servidor ao atualizar avatar.' 
+      });
+    }
+  }
+};
 
 module.exports = UserController;
