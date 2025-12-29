@@ -10,7 +10,7 @@ const options = {
       version: process.env.APP_VERSION || '1.0.0',
       description: process.env.APP_DESCRIPTION || 'API documentation using Swagger',
       contact: {
-        name: process.env.APP_AUTHOR || 'Abiratan Lopes Email: abi.lopes.sousa@gmail.com', 
+        name: process.env.APP_AUTHOR || 'Abiratan Lopes Email: abi.lopes.sousa@gmail.com',
       },
     },
     servers: [
@@ -23,11 +23,10 @@ const options = {
   },
   // Using absolute paths based on the location of this file.
   apis: [
-    path.join(__dirname, '../routes/*.js'),   // Sobe uma pasta e entra em routes
-    path.join(__dirname, '../../swagger.yaml') // Sobe duas pastas para achar o yaml na raiz
-  ], 
+    path.join(__dirname, '../routes/*.js'), // Sobe uma pasta e entra em routes
+    path.join(__dirname, '../../swagger.yaml'), // Sobe duas pastas para achar o yaml na raiz
+  ],
 };
-  
 
 const swaggerSpec = swaggerJsdoc(options);
 

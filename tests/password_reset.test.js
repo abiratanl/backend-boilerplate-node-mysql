@@ -10,25 +10,24 @@ const testUser = {
   name: 'Reset Test User',
   email: 'reset.test@example.com',
   password: 'oldpassword123',
-  role: 'atendente'
+  role: 'atendente',
 };
 
 let authToken;
 
 describe('PASSWORD RESET & ME PROFILE TESTS', () => {
-
   beforeAll(async () => {
     // 1. Clean up potential leftovers
     if (db && db.query) {
       await db.query('DELETE FROM users WHERE email = ?', [testUser.email]);
-      
+
       // 2. Insert User
       const bcrypt = require('bcryptjs');
       const hash = await bcrypt.hash(testUser.password, 10);
 
       await db.query(
         'INSERT INTO users (id, name, email, password, role, is_active, must_change_password) VALUES (?, ?, ?, ?, ?, true, false)',
-        [testUser.id, testUser.name, testUser.email, hash, testUser.role]
+        [testUser.id, testUser.name, testUser.email, hash, testUser.role],
       );
     }
   });
@@ -39,20 +38,19 @@ describe('PASSWORD RESET & ME PROFILE TESTS', () => {
   });
 
   // --- /me Tests ---
-  
+
   it('Should login and get token', async () => {
     const res = await request(app).post('/api/auth/login').send({
-      email: testUser.email, password: testUser.password
+      email: testUser.email,
+      password: testUser.password,
     });
     expect(res.statusCode).toBe(200);
     authToken = res.body.token;
   });
 
   it('Should GET /me profile using token', async () => {
-    const res = await request(app)
-      .get('/api/users/me')
-      .set('Authorization', `Bearer ${authToken}`);
-    
+    const res = await request(app).get('/api/users/me').set('Authorization', `Bearer ${authToken}`);
+
     expect(res.statusCode).toBe(200);
     expect(res.body.data.email).toBe(testUser.email);
     expect(res.body.data.id).toBe(testUser.id);
@@ -69,7 +67,9 @@ describe('PASSWORD RESET & ME PROFILE TESTS', () => {
     expect(res.body.message).toMatch(/token sent/i);
 
     // Verify in DB that token was generated
-    const [rows] = await db.query('SELECT password_reset_token FROM users WHERE id = ?', [testUser.id]);
+    const [rows] = await db.query('SELECT password_reset_token FROM users WHERE id = ?', [
+      testUser.id,
+    ]);
     expect(rows[0].password_reset_token).not.toBeNull();
   });
 
@@ -78,7 +78,7 @@ describe('PASSWORD RESET & ME PROFILE TESTS', () => {
     const crypto = require('crypto');
     const knownToken = 'my-secret-reset-token';
     const hashedToken = crypto.createHash('sha256').update(knownToken).digest('hex');
-    
+
     // We use DATE_ADD(NOW(), ...) to ensure timezone consistency with MySQL.
     // Instead of calculating the date in JS.
     await db.query(
@@ -86,7 +86,7 @@ describe('PASSWORD RESET & ME PROFILE TESTS', () => {
        SET password_reset_token = ?, 
            password_reset_expires = DATE_ADD(NOW(), INTERVAL 20 MINUTE) 
        WHERE id = ?`,
-      [hashedToken, testUser.id]
+      [hashedToken, testUser.id],
     );
 
     // 2. Try to reset using the known RAW token
@@ -100,11 +100,12 @@ describe('PASSWORD RESET & ME PROFILE TESTS', () => {
     }
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.message).toMatch(/sucesso/i); 
-    
+    expect(res.body.message).toMatch(/sucesso/i);
+
     // 3. Verify Login with NEW password
     const loginRes = await request(app).post('/api/auth/login').send({
-      email: testUser.email, password: 'newpassword789'
+      email: testUser.email,
+      password: 'newpassword789',
     });
     expect(loginRes.statusCode).toBe(200);
   });

@@ -1,24 +1,25 @@
 const request = require('supertest');
 const app = require('../src/app');
 const UserModel = require('../src/models/userModel');
-const db = require('../src/config/database');
 
 // MOCK OF THE dependencies
 jest.mock('../src/models/userModel');
 jest.mock('../src/config/database', () => ({
   query: jest.fn(),
-  end: jest.fn() // Mock to avoid connection errors
+  end: jest.fn(), // Mock to avoid connection errors
 }));
 jest.mock('../src/middlewares/authMiddleware', () => ({
   protect: (req, res, next) => {
-    req.user = { id: 'admin-id', role: 'admin' }; // Simula Admin Logado
+    req.user = { id: 'admin-id', role: 'admin' }; // Simulate Logged-in Admin
     next();
   },
-  restrictTo: (...roles) => (req, res, next) => next(), // It allows everything.
+  restrictTo:
+    (..._roles) =>
+    (req, res, next) =>
+      next(), // It allows everything.
 }));
 
 describe('User API Endpoints (Unit Tests)', () => {
-  
   afterEach(() => {
     jest.clearAllMocks();
   });
@@ -27,16 +28,16 @@ describe('User API Endpoints (Unit Tests)', () => {
     const newUser = {
       name: 'John Doe',
       email: 'john@example.com',
-      role: 'atendente'
+      role: 'atendente',
     };
 
     // Mock of the Model's behavior
     UserModel.findByEmail.mockResolvedValue(null); // Não existe ainda
-    UserModel.create.mockResolvedValue({ 
-      id: 'uuid-123', 
-      ...newUser, 
+    UserModel.create.mockResolvedValue({
+      id: 'uuid-123',
+      ...newUser,
       is_active: true,
-      must_change_password: true 
+      must_change_password: true,
     });
 
     const res = await request(app).post('/api/users').send(newUser);
@@ -50,7 +51,7 @@ describe('User API Endpoints (Unit Tests)', () => {
     const existingUser = {
       name: 'Jane Doe',
       email: 'jane@example.com',
-      password: '123'
+      password: '123',
     };
 
     // It simulates that it ALREADY EXISTS in the database.

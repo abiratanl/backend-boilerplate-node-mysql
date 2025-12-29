@@ -1,5 +1,5 @@
 // 1. LOAD ENVIRONMENT VARIABLES (Crucial for connecting to the database)
-require('dotenv').config(); 
+require('dotenv').config();
 
 const request = require('supertest');
 const { v4: uuidv4 } = require('uuid'); // <--- Importando UUID
@@ -21,7 +21,7 @@ describe('AUTHENTICATION (AUTH) TESTS', () => {
   beforeAll(async () => {
     // Clean up before you start to avoid conflicts.
     if (db && db.query) {
-        await db.query('DELETE FROM users WHERE email = ?', [testUser.email]);
+      await db.query('DELETE FROM users WHERE email = ?', [testUser.email]);
     }
 
     try {
@@ -39,7 +39,7 @@ describe('AUTHENTICATION (AUTH) TESTS', () => {
       ]);
     } catch (error) {
       console.error('Failed to setup Auth Test user:', error);
-      throw error; 
+      throw error;
     }
   });
 
@@ -47,7 +47,7 @@ describe('AUTHENTICATION (AUTH) TESTS', () => {
     // Limpeza final
     await db.query('DELETE FROM users WHERE email = ?', [testUser.email]);
     // Optional: Close the connection if necessary, but beware of pool conflicts.
-    // await db.end(); 
+    // await db.end();
   });
 
   it('Should successfully log in and return a JWT token (200)', async () => {
@@ -83,7 +83,7 @@ describe('AUTHENTICATION (AUTH) TESTS', () => {
       })
       .expect(401);
   });
-  
+
   it('Should fail login due to MISSING FIELDS (400)', async () => {
     await request(app)
       .post('/api/auth/login')
@@ -99,11 +99,8 @@ describe('AUTHENTICATION (AUTH) TESTS', () => {
   });
 
   it('Should successfully access a protected route WITH a valid token (200)', async () => {
-    if (!authToken) throw new Error("Token missing");
-    
-    await request(app)
-      .get('/api/users')
-      .set('Authorization', `Bearer ${authToken}`)
-      .expect(200);
+    if (!authToken) throw new Error('Token missing');
+
+    await request(app).get('/api/users').set('Authorization', `Bearer ${authToken}`).expect(200);
   });
 });

@@ -42,11 +42,11 @@ exports.login = async (req, res) => {
 
     // 3. Check if user is active
     if (!user.is_active) {
-      return res.status(403).json({ 
-        status: 'error', 
-        message: 'Sua conta está inativa. Entre em contato com o administrador.' 
-      })
-    };
+      return res.status(403).json({
+        status: 'error',
+        message: 'Sua conta está inativa. Entre em contato com o administrador.',
+      });
+    }
 
     // 4. Check if password is correct
     const isMatch = await bcrypt.compare(password, user.password);
@@ -70,7 +70,7 @@ exports.login = async (req, res) => {
         status: 'fail',
         code: 'PASSWORD_CHANGE_REQUIRED', // The frontend uses this to know what to do.
         message: 'É necessário alterar sua senha no primeiro acesso.',
-        token: tempToken // Temporary token to enable the exchange request.
+        token: tempToken, // Temporary token to enable the exchange request.
       });
     }
     // =================================================================
@@ -88,7 +88,6 @@ exports.login = async (req, res) => {
         user,
       },
     });
-
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
@@ -112,7 +111,9 @@ exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) {
-      return res.status(400).json({ status: 'error', message: 'Por favor, insira um Email válido.' });
+      return res
+        .status(400)
+        .json({ status: 'error', message: 'Por favor, insira um Email válido.' });
     }
 
     // 1. Check if user exists
@@ -120,9 +121,9 @@ exports.forgotPassword = async (req, res) => {
     const user = rows[0];
 
     if (!user) {
-      return res.status(200).json({ 
-        status: 'success', 
-        message: 'Token sent to email (if user exists).' 
+      return res.status(200).json({
+        status: 'success',
+        message: 'Token sent to email (if user exists).',
       });
     }
 
@@ -138,12 +139,13 @@ exports.forgotPassword = async (req, res) => {
        SET password_reset_token = ?, 
            password_reset_expires = DATE_ADD(NOW(), INTERVAL 10 MINUTE) 
        WHERE email = ?`,
-      [passwordResetToken, email]
+      [passwordResetToken, email],
     );
 
     // 5. Mock Email Sending
-    const resetURL = `${req.protocol}://${req.get('host')}/api/auth/reset-password/${resetToken}`;
-    
+    const resetURL = `${req.protocol}://${req.get('host')}/api/users/resetPassword/${resetToken}`;
+    console.log(`🔗 Link de Reset (Simulação): ${resetURL}`);
+
     console.log('============================================');
     console.log('📧 EMAIL MOCK (Forgot Password)');
     console.log(`To: ${email}`);
@@ -154,7 +156,6 @@ exports.forgotPassword = async (req, res) => {
       status: 'success',
       message: 'Token sent to email!',
     });
-
   } catch (error) {
     console.error('Forgot Password Error:', error);
     res.status(500).json({ status: 'error', message: 'Internal Server Error' });
@@ -177,7 +178,7 @@ exports.resetPassword = async (req, res) => {
     // 2. Find user with valid token and not expired
     const [rows] = await db.query(
       'SELECT * FROM users WHERE password_reset_token = ? AND password_reset_expires > NOW()',
-      [hashedToken]
+      [hashedToken],
     );
     const user = rows[0];
 
@@ -190,18 +191,17 @@ exports.resetPassword = async (req, res) => {
 
     await db.query(
       'UPDATE users SET password = ?, password_reset_token = NULL, password_reset_expires = NULL WHERE id = ?',
-      [newPasswordHash, user.id]
+      [newPasswordHash, user.id],
     );
 
     res.status(200).json({
       status: 'success',
       message: 'Senha alterado com sucesso. Por favor faça login novamente.',
     });
-
   } catch (error) {
     console.error('Reset Password Error:', error);
     res.status(500).json({ status: 'error', message: 'Erro interno' });
-  }  
+  }
 };
 
 /**
@@ -213,7 +213,7 @@ exports.changePassword = async (req, res) => {
   try {
     // 1. We retrieved the current password and the new password from the body.
     const { currentPassword, newPassword } = req.body;
-    
+
     // 2. The ID comes from the JWT Token (thanks to the 'protect' middleware).
     const userId = req.user.id;
 
@@ -239,16 +239,15 @@ exports.changePassword = async (req, res) => {
     const newHash = await bcrypt.hash(newPassword, 10);
 
     // 6. Update the database and remove the must_change_password flag.
-    await db.query(
-      'UPDATE users SET password = ?, must_change_password = FALSE WHERE id = ?',
-      [newHash, userId]
-    );
+    await db.query('UPDATE users SET password = ?, must_change_password = FALSE WHERE id = ?', [
+      newHash,
+      userId,
+    ]);
 
-    res.status(200).json({ 
-      status: 'success', 
-      message: 'Senha alterada com sucesso! Você já pode usar o sistema normalmente.' 
+    res.status(200).json({
+      status: 'success',
+      message: 'Senha alterada com sucesso! Você já pode usar o sistema normalmente.',
     });
-
   } catch (error) {
     console.error('Change Password Error:', error);
     res.status(500).json({ message: 'Erro interno ao trocar senha.' });

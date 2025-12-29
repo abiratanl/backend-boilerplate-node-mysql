@@ -2,7 +2,6 @@ const db = require('../config/database');
 const { v4: uuidv4 } = require('uuid');
 
 class UserModel {
-  
   /**
    * Find a user by their Email.
    */
@@ -20,30 +19,31 @@ class UserModel {
     const [rows] = await db.query(sql, [id]);
     return rows[0];
   }
-/**
+  /**
    * Creates a new user.
    * @param {Object} userData - Contains name, email, password (hashed), role.
    * @returns {Promise<Object>} The created user object.
    */
   static async create(userData) {
     const { name, email, password, role } = userData;
-    const id = uuidv4();    
-    
+    const id = uuidv4();
+
     const isActive = userData.is_active !== undefined ? userData.is_active : true;
-    const mustChangePassword = userData.must_change_password !== undefined ? userData.must_change_password : true;    
+    const mustChangePassword =
+      userData.must_change_password !== undefined ? userData.must_change_password : true;
     const sql = `
       INSERT INTO users (id, name, email, password, role, is_active, must_change_password) 
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
 
     await db.query(sql, [
-      id, 
-      name, 
-      email, 
-      password, 
-      role || 'atendente', 
+      id,
+      name,
+      email,
+      password,
+      role || 'atendente',
       isActive,
-      mustChangePassword
+      mustChangePassword,
     ]);
 
     return {
@@ -52,7 +52,7 @@ class UserModel {
       email,
       role: role || 'atendente',
       is_active: isActive,
-      must_change_password: mustChangePassword 
+      must_change_password: mustChangePassword,
     };
   }
 
@@ -82,7 +82,7 @@ class UserModel {
     values.push(id); // Add ID to WHERE
 
     const sql = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
-    
+
     const [result] = await db.query(sql, values);
     return result.affectedRows > 0;
   }
@@ -95,12 +95,13 @@ class UserModel {
     const [result] = await db.query(sql, [id]);
     return result.affectedRows > 0;
   }
-  
+
   /**
    * Get all active users (ignore soft deleted).
    */
   static async findAll() {
-    const sql = 'SELECT id, name, email, role, is_active, created_at FROM users WHERE deleted_at IS NULL';
+    const sql =
+      'SELECT id, name, email, role, is_active, created_at FROM users WHERE deleted_at IS NULL';
     const [rows] = await db.query(sql);
     return rows;
   }

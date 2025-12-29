@@ -1,23 +1,23 @@
 const rateLimit = require('express-rate-limit');
 
 const apiLimiterConfig = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 100, 
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
     status: 'error',
-    message: 'Muitas requisições deste IP, tente novamente mais tarde.'
-  }
+    message: 'Muitas requisições deste IP, tente novamente mais tarde.',
+  },
 });
 
 const loginLimiterConfig = rateLimit({
-  windowMs: 15 * 60 * 1000, 
+  windowMs: 15 * 60 * 1000,
   max: 5, // Blocks after 5 attempts.
   message: {
     status: 'error',
-    message: 'Muitas tentativas de login. Tente novamente mais tarde.'
-  }
+    message: 'Muitas tentativas de login. Tente novamente mais tarde.',
+  },
 });
 
 /**
@@ -35,5 +35,5 @@ const limiterWrapper = (limiterInstance) => {
 
 module.exports = {
   apiLimiter: limiterWrapper(apiLimiterConfig),
-  loginLimiter: limiterWrapper(loginLimiterConfig)
+  loginLimiter: limiterWrapper(loginLimiterConfig),
 };

@@ -33,9 +33,10 @@ class UserController {
 
       // Security: Prevent updating sensitive fields via this route
       if (req.body.password || req.body.role || req.body.email) {
-        return res.status(400).json({ 
-          status: 'fail', 
-          message: 'Esta rota serve apenas para atualizar dados do perfil (nome). Use rotas específicas para senha ou email.' 
+        return res.status(400).json({
+          status: 'fail',
+          message:
+            'Esta rota serve apenas para atualizar dados do perfil (nome). Use rotas específicas para senha ou email.',
         });
       }
 
@@ -43,16 +44,19 @@ class UserController {
       const updated = await UserModel.update(userId, { name });
 
       if (!updated) {
-        return res.status(404).json({ status: 'fail', message: 'Usuário não encontrado ou nenhuma alteração realizada.' });
+        return res.status(404).json({
+          status: 'fail',
+          message: 'Usuário não encontrado ou nenhuma alteração realizada.',
+        });
       }
 
       // Fetch updated data to return to the frontend
       const updatedUser = await UserModel.findById(userId);
 
-      res.status(200).json({ 
-        status: 'success', 
-        message: 'Perfil atualizado com sucesso', 
-        data: updatedUser 
+      res.status(200).json({
+        status: 'success',
+        message: 'Perfil atualizado com sucesso',
+        data: updatedUser,
       });
     } catch (error) {
       console.error('Error in updateMe:', error);
@@ -97,11 +101,13 @@ class UserController {
    */
   static async createUser(req, res) {
     try {
-      const { name, email, password, role } = req.body;
+      const { name, email, _password, role } = req.body;
 
       // 1. Basic Validation
       if (!name || !email) {
-        return res.status(400).json({ status: 'fail', message: 'Preencha os campos obrigatórios.' });
+        return res
+          .status(400)
+          .json({ status: 'fail', message: 'Preencha os campos obrigatórios.' });
       }
 
       // 2. Check for duplicate email
@@ -125,9 +131,9 @@ class UserController {
         password: hashedPassword,
         role,
         is_active: true,
-        must_change_password: true
+        must_change_password: true,
       });
-       // 5. MOCK ENVIO DE EMAIL
+      // 5. MOCK ENVIO DE EMAIL
       console.log('============================================');
       console.log('📧 EMAIL MOCK (Boas Vindas)');
       console.log(`Para: ${email}`);
@@ -135,11 +141,11 @@ class UserController {
       console.log('Acesse o sistema e troque sua senha imediatamente.');
       console.log('============================================');
 
-    res.status(201).json({ 
-      status: 'success', 
-      message: 'Usuário criado. A senha foi enviada por email.',
-      data: newUser 
-    });
+      res.status(201).json({
+        status: 'success',
+        message: 'Usuário criado. A senha foi enviada por email.',
+        data: newUser,
+      });
     } catch (error) {
       console.error('Error in createUser:', error);
       res.status(500).json({ status: 'error', message: 'Erro interno do servidor.' });
@@ -157,7 +163,10 @@ class UserController {
       const updated = await UserModel.update(id, { name, role, is_active });
 
       if (!updated) {
-        return res.status(404).json({ status: 'fail', message: 'Usuário não encontrado ou nenhuma alteração realizada.' });
+        return res.status(404).json({
+          status: 'fail',
+          message: 'Usuário não encontrado ou nenhuma alteração realizada.',
+        });
       }
 
       res.status(200).json({ status: 'success', message: 'Usuário atualizado com sucesso' });
@@ -176,7 +185,9 @@ class UserController {
       const deleted = await UserModel.softDelete(id);
 
       if (!deleted) {
-        return res.status(404).json({ status: 'fail', message: 'Usuário não encontrado ou já deletado.' });
+        return res
+          .status(404)
+          .json({ status: 'fail', message: 'Usuário não encontrado ou já deletado.' });
       }
 
       res.status(200).json({ status: 'success', message: 'Usuário deletado com sucesso!' });

@@ -13,9 +13,11 @@ const createAdminUser = async () => {
 
     // 1. Check if it already exists.
     const [existing] = await db.query('SELECT * FROM users WHERE email = ?', [adminEmail]);
-    
+
     if (existing.length > 0) {
-      console.log('⚠️  The admin account already exists in the database. No action has been taken.');
+      console.log(
+        '⚠️  The admin account already exists in the database. No action has been taken.',
+      );
       process.exit(0);
     }
 
@@ -35,7 +37,7 @@ const createAdminUser = async () => {
       password: hashedPassword,
       role: 'admin',
       is_active: true,
-      must_change_password: true // <--- Force the change on first login.
+      must_change_password: true, // <--- Force the change on first login.
     };
 
     // 5. Insert into database
@@ -51,7 +53,7 @@ const createAdminUser = async () => {
       newUser.password,
       newUser.role,
       newUser.is_active,
-      newUser.must_change_password
+      newUser.must_change_password,
     ]);
 
     console.log('✅ Admin criado com sucesso!');
@@ -61,7 +63,6 @@ const createAdminUser = async () => {
     console.log(`🔑 Senha Temporária: ${rawPassword}`);
     console.log('⚠️  Status: Ativo | Troca de senha obrigatória: SIM');
     console.log('==================================================');
-
   } catch (error) {
     console.error('❌ Erro ao criar admin:', error);
     process.exit(1);

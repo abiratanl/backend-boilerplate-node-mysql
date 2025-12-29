@@ -36,7 +36,7 @@ app.get('/', (req, res) => {
   res.status(200).json({
     status: 'success',
     message: 'Boilerplate API is running',
-    documentation: '/api-docs'
+    documentation: '/api-docs',
   });
 });
 
@@ -46,11 +46,11 @@ app.use('/api/auth', authRoutes); // <--- Use Auth Routes
 /**
  * Global Error Handler
  */
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   console.error(err.stack);
   res.status(500).json({
     status: 'error',
-    message: 'Erro interno do Servidor.'
+    message: 'Erro interno do Servidor.',
   });
 });
 

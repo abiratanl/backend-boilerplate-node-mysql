@@ -7,10 +7,7 @@ const jwt = require('jsonwebtoken');
 exports.protect = (req, res, next) => {
   // 1. Get token from header
   let token;
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
 
@@ -25,12 +22,12 @@ exports.protect = (req, res, next) => {
   // 3. Verify token
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     // 4. Attach user info to the request object
     req.user = decoded;
-    
+
     next();
-  } catch (error) {
+  } catch (_error) {
     return res.status(401).json({
       status: 'error',
       message: 'Senha ou Email inválido, por favor tente novamente.',

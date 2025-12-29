@@ -3,13 +3,7 @@
  * If any are missing, the process will exit to prevent runtime errors.
  */
 const validateEnv = () => {
-  const requiredEnvVars = [
-    'PORT',
-    'DB_HOST',
-    'DB_USER',
-    'DB_PASSWORD',
-    'DB_NAME'
-  ];
+  const requiredEnvVars = ['PORT', 'DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
 
   const missingVars = requiredEnvVars.filter((key) => !process.env[key]);
 
@@ -19,7 +13,7 @@ const validateEnv = () => {
       console.error(`   - ${key}`);
     });
     console.error('Please check your .env file.');
-    
+
     // Exit the process with failure code
     process.exit(1);
   }

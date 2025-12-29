@@ -11,13 +11,13 @@ describe('INTEGRATION TESTS: User API', () => {
   const adminUser = {
     email: 'admin@test.com',
     password: 'adminpassword',
-    role: 'admin'
+    role: 'admin',
   };
 
   beforeAll(async () => {
     // 1. Clear and create Admin
     await db.query('DELETE FROM users');
-    
+
     const bcrypt = require('bcryptjs');
     const hash = await bcrypt.hash(adminUser.password, 10);
     const adminId = uuidv4();
@@ -25,7 +25,7 @@ describe('INTEGRATION TESTS: User API', () => {
     // Insert Admin (no password change required to facilitate testing))
     await db.query(
       'INSERT INTO users (id, name, email, password, role, is_active, must_change_password) VALUES (?, ?, ?, ?, ?, true, false)',
-      [adminId, 'Admin Test', adminUser.email, hash, adminUser.role]
+      [adminId, 'Admin Test', adminUser.email, hash, adminUser.role],
     );
 
     // 2. Login to get the Token
@@ -42,7 +42,7 @@ describe('INTEGRATION TESTS: User API', () => {
     const newUser = {
       name: 'Integration User',
       email: `integration.${Date.now()}@test.com`,
-      role: 'atendente'
+      role: 'atendente',
       // Note: We do not send passwords; the system should generate them!
     };
 
