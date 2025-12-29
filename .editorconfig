@@ -1,0 +1,15 @@
+# http://editorconfig.org
+root = true
+
+[*]
+# The secret to success: Forcing LF (Unix) on all systems.
+end_of_line = lf
+charset = utf-8
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Markdown files can have trailing spaces (for line breaks).
+[*.md]
+trim_trailing_whitespace = false
