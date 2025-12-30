@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const db = require('../config/database');
 const User = require('../models/UserModel'); // Import User Model for 'create' logic
+const emailService = require('../services/emailService');
+
 
 /**
  * Helper function to generate JWT Token
@@ -200,15 +202,19 @@ exports.forgotPassword = async (req, res) => {
       [passwordResetToken, email],
     );
 
-    // 5. Mock Email Sending
+    // 5. Email Sending
     const resetURL = `${req.protocol}://${req.get('host')}/api/users/resetPassword/${resetToken}`;
-    console.log(`🔗 Reset Link (Simulation): ${resetURL}`);
-
-    console.log('============================================');
-    console.log('📧 EMAIL MOCK (Forgot Password)');
-    console.log(`To: ${email}`);
-    console.log(`Reset Token (Raw): ${resetToken}`);
-    console.log('============================================');
+    const message = `
+      Você solicitou a redefinição de senha.
+      Por favor, faça uma requisição PUT para: \n\n ${resetUrl} \n\n
+      Se você não solicitou isso, ignore este e-mail.
+    `;
+    
+    await emailService.sendEmail({
+      to: user.email,
+      subject: 'Recuperação de Senha (Válido por 10 min)',
+      text: message
+    });
 
     res.status(200).json({
       status: 'success',

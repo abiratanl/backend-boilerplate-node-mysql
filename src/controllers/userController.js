@@ -3,6 +3,8 @@ const UserModel = require('../models/UserModel');
 const bcrypt = require('bcryptjs');
 const db = require('../config/database'); 
 const { uploadImage } = require('../services/uploadService');
+const emailService = require('../services/emailService');
+
 
 class UserController {
   /**
@@ -135,19 +137,28 @@ class UserController {
         is_active: true,
         must_change_password: true,
       });
-      // 5. MOCK ENVIO DE EMAIL
-      console.log('============================================');
-      console.log('📧 EMAIL MOCK (Boas Vindas)');
-      console.log(`Para: ${email}`);
-      console.log(`Sua senha temporária é: ${tempPassword}`);
-      console.log('Acesse o sistema e troque sua senha imediatamente.');
-      console.log('============================================');
+      // 5. ENVIO DE EMAIL
+      const message = `
+      Bem-vindo ao sistema Tech-S!
+      Sua conta foi criada com sucesso.
+      
+      Login: ${email}
+      Senha Temporária: ${tempPassword}
+      
+      Por favor, altere sua senha no primeiro acesso.
+    `;
 
-      res.status(201).json({
-        status: 'success',
-        message: 'Usuário criado. A senha foi enviada por email.',
-        data: newUser,
-      });
+    await emailService.sendEmail({
+      to: email,
+      subject: 'Bem-vindo a Madri Noivas! Suas credenciais de acesso.',
+      text: message
+    });
+
+      res.status(201).json({ 
+      status: 'success', 
+      message: 'Usuário criado. Credenciais enviadas por e-mail.',
+      data: { id: newUser.id, name: newUser.name, email: newUser.email }
+    });
     } catch (error) {
       console.error('Error in createUser:', error);
       res.status(500).json({ status: 'error', message: 'Erro interno do servidor.' });
