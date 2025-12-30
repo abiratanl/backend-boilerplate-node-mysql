@@ -6,6 +6,7 @@ const swaggerSpec = require('./config/swagger');
 
 const authRoutes = require('./routes/authRoutes'); // <--- Import Auth Routes
 const categoryRoutes = require('./routes/categoryRoutes');
+const customerRoutes = require('./routes/customerRoutes');
 const productRoutes = require('./routes/productRoutes');
 const transferRoutes = require('./routes/transferRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -50,6 +51,7 @@ app.use('/api/auth', authRoutes);
 
 
 app.use('/api/categories', categoryRoutes);
+app.use('/api/customers', customerRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/transfers', transferRoutes);
 
