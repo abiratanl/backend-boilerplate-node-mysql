@@ -6,6 +6,8 @@ const swaggerSpec = require('./config/swagger');
 
 const authRoutes = require('./routes/authRoutes'); // <--- Import Auth Routes
 const categoryRoutes = require('./routes/categoryRoutes');
+const productRoutes = require('./routes/productRoutes');
+const transferRoutes = require('./routes/transferRoutes');
 const userRoutes = require('./routes/userRoutes');
 const { apiLimiter } = require('./middlewares/rateLimitMiddleware');
 //const swaggerDocument = YAML.load('./src/swagger.yaml');
@@ -46,8 +48,10 @@ app.get('/', (req, res) => {
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes); 
 
-// Use Category Routes
+
 app.use('/api/categories', categoryRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/transfers', transferRoutes);
 
 /**
  * Global Error Handler

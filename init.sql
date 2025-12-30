@@ -8,7 +8,7 @@ USE `loja_db`;
 -- 1. STORES
 -- Physical locations of the rental network.
 -- =================================================================================
-CREATE TABLE `stores` (
+CREATE TABLE IF NOT EXISTS `stores` (
   `id` char(36) NOT NULL,
   `name` varchar(255) NOT NULL,
   `address` text,
@@ -22,7 +22,7 @@ CREATE TABLE `stores` (
 -- 2. USERS
 -- System users (Admins, Owners, Attendants) and Clients with login access.
 -- =================================================================================
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
   `id` char(36) NOT NULL,
   `store_id` char(36) DEFAULT NULL, -- NULL for global admins, specific ID for attendants
   `name` varchar(255) NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE `users` (
 -- 3. CATEGORIES
 -- Hierarchical structure (e.g., Female -> Dresses -> Wedding).
 -- =================================================================================
-CREATE TABLE `categories` (
+CREATE TABLE IF NOT EXISTS `categories` (
   `id` char(36) NOT NULL,
   `parent_id` char(36) DEFAULT NULL, -- Self-referencing for subcategories
   `name` varchar(100) NOT NULL,
@@ -60,31 +60,37 @@ CREATE TABLE `categories` (
 -- 4. PRODUCTS
 -- The inventory items (dresses, suits, accessories).
 -- =================================================================================
-CREATE TABLE `products` (
+
+CREATE TABLE IF NOT EXISTS `products` (
   `id` char(36) NOT NULL,
   `store_id` char(36) NOT NULL,
-  `category_id` char(36) NOT NULL,
+  `category_id` char(36) DEFAULT NULL,
+  `code` varchar(50) NOT NULL,
   `name` varchar(255) NOT NULL,
-  `code` varchar(50) NOT NULL, -- Barcode or internal tag
-  `size` varchar(10),
-  `color` varchar(50),
-  `brand` varchar(100),
-  `purchase_price` decimal(10,2) NOT NULL DEFAULT '0.00', -- Cost for ROI calculation
-  `rental_price` decimal(10,2) NOT NULL DEFAULT '0.00', -- Base rental price
-  `status` enum('available', 'rented', 'laundry', 'maintenance', 'retired') NOT NULL DEFAULT 'available',
+  `description` text,
+  `size` varchar(10) DEFAULT NULL,
+  `color` varchar(50) DEFAULT NULL,
+  `brand` varchar(100) DEFAULT NULL,
+  `purchase_price` decimal(10,2) DEFAULT '0.00',
+  `rental_price` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `status` enum('available','reserved','rented','laundry','maintenance','retired', 'transferring') NOT NULL DEFAULT 'available',
+  `image_url` varchar(255) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_code_store` (`code`,`store_id`),
   KEY `idx_product_status` (`status`),
-  CONSTRAINT `fk_products_store` FOREIGN KEY (`store_id`) REFERENCES `stores` (`id`),
-  CONSTRAINT `fk_products_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  KEY `fk_products_store` (`store_id`),
+  KEY `fk_products_category` (`category_id`),
+  CONSTRAINT `fk_products_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_products_store` FOREIGN KEY (`store_id`) REFERENCES `stores` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- =================================================================================
 -- 5. CUSTOMERS
 -- Extended profile for clients (measurements, personal info).
 -- =================================================================================
-CREATE TABLE `customers` (
+CREATE TABLE IF NOT EXISTS `customers` (
   `id` char(36) NOT NULL,
   `user_id` char(36) DEFAULT NULL, -- Link to 'users' if they have login access
   `name` varchar(255) NOT NULL,
@@ -102,7 +108,7 @@ CREATE TABLE `customers` (
 -- 6. ADDRESSES
 -- Multiple addresses per customer (Residential, Delivery, Billing).
 -- =================================================================================
-CREATE TABLE `addresses` (
+CREATE TABLE IF NOT EXISTS `addresses` (
   `id` char(36) NOT NULL,
   `customer_id` char(36) NOT NULL,
   `type` enum('residential', 'commercial', 'billing', 'delivery', 'event_venue') NOT NULL DEFAULT 'residential',
@@ -126,7 +132,7 @@ CREATE TABLE `addresses` (
 -- 7. CONTACTS
 -- Extra contact info (Phones, Secondary Emails, Social Media).
 -- =================================================================================
-CREATE TABLE `contacts` (
+CREATE TABLE IF NOT EXISTS `contacts` (
   `id` char(36) NOT NULL,
   `customer_id` char(36) NOT NULL,
   `type` enum('mobile', 'whatsapp', 'landline', 'email_secondary', 'instagram') NOT NULL DEFAULT 'whatsapp',
@@ -140,7 +146,7 @@ CREATE TABLE `contacts` (
 -- 8. RENTALS (BOOKINGS)
 -- Main transaction table. Controls dates and status.
 -- =================================================================================
-CREATE TABLE `rentals` (
+CREATE TABLE IF NOT EXISTS `rentals` (
   `id` char(36) NOT NULL,
   `store_id` char(36) NOT NULL,
   `customer_id` char(36) NOT NULL,
@@ -177,7 +183,7 @@ CREATE TABLE `rentals` (
 -- 9. RENTAL ITEMS
 -- Many-to-Many relationship between Rentals and Products.
 -- =================================================================================
-CREATE TABLE `rental_items` (
+CREATE TABLE IF NOT EXISTS `rental_items` (
   `id` char(36) NOT NULL,
   `rental_id` char(36) NOT NULL,
   `product_id` char(36) NOT NULL,
@@ -192,7 +198,7 @@ CREATE TABLE `rental_items` (
 -- 10. INSTALLMENTS (ACCOUNTS RECEIVABLE)
 -- Planned payments (e.g., 50% signal + 50% upon pickup).
 -- =================================================================================
-CREATE TABLE `installments` (
+CREATE TABLE IF NOT EXISTS `installments` (
   `id` char(36) NOT NULL,
   `rental_id` char(36) NOT NULL,
   `number` int NOT NULL, -- Installment number (1, 2...)
@@ -214,7 +220,7 @@ CREATE TABLE `installments` (
 -- 11. PAYMENTS (CASH FLOW)
 -- Actual money received. Linked to an installment.
 -- =================================================================================
-CREATE TABLE `payments` (
+CREATE TABLE IF NOT EXISTS `payments` (
   `id` char(36) NOT NULL,
   `rental_id` char(36) NOT NULL,
   `installment_id` char(36) DEFAULT NULL, -- Can be NULL for ad-hoc payments
@@ -232,7 +238,7 @@ CREATE TABLE `payments` (
 -- 12. PRODUCT LOGS
 -- History of maintenance, laundry, and repairs.
 -- =================================================================================
-CREATE TABLE `product_logs` (
+CREATE TABLE IF NOT EXISTS `product_logs` (
   `id` char(36) NOT NULL,
   `product_id` char(36) NOT NULL,
   `store_id` char(36) NOT NULL,
@@ -246,6 +252,30 @@ CREATE TABLE `product_logs` (
   CONSTRAINT `fk_logs_store` FOREIGN KEY (`store_id`) REFERENCES `stores` (`id`),
   CONSTRAINT `fk_logs_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- =================================================================================
+-- 13. PRODUCT TRANSFERS
+-- History of products transfer
+-- =================================================================================
+
+CREATE TABLE IF NOT EXISTS `product_transfers` (
+  `id` char(36) NOT NULL,
+  `product_id` char(36) NOT NULL,
+  `from_store_id` char(36) NOT NULL, 
+  `to_store_id` char(36) NOT NULL,   
+  `requested_by` char(36) NOT NULL,  -
+  `status` enum('pending', 'in_transit', 'completed', 'cancelled') NOT NULL DEFAULT 'pending',
+  `requested_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `received_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_transfers_product` (`product_id`),
+  KEY `fk_transfers_from` (`from_store_id`),
+  KEY `fk_transfers_to` (`to_store_id`),
+  CONSTRAINT `fk_transfers_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_transfers_from` FOREIGN KEY (`from_store_id`) REFERENCES `stores` (`id`),
+  CONSTRAINT `fk_transfers_to` FOREIGN KEY (`to_store_id`) REFERENCES `stores` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
 -- =================================================================================
 -- 13. STORES TABEL - Initial Data
