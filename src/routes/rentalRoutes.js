@@ -9,7 +9,9 @@ router.get('/', rentalController.getAllRentals);
 router.get('/:id', rentalController.getRentalById);
 router.post('/', rentalController.createRental);
 
-// Futuro: Rota para dar baixa no pagamento
-// router.post('/:id/payments', rentalController.addPayment);
+
+// Operational Actions
+router.post('/:id/return', rentalController.returnRental);
+router.post('/:id/cancel', rentalController.cancelRental);
 
 module.exports = router;

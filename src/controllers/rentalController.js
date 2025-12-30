@@ -94,4 +94,57 @@ exports.getAllRentals = async (req, res) => {
     console.error(error);
     res.status(500).json({ message: 'Erro interno' });
   }
+
+  
+};
+
+exports.returnRental = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Validação básica: verificar se aluguel existe e status atual
+    const rental = await Rental.findById(id);
+    if (!rental) return res.status(404).json({ message: 'Aluguel não encontrado' });
+    
+    // Segurança multiloja
+    if (req.user.storeId && rental.store_id !== req.user.storeId) {
+      return res.status(403).json({ message: 'Acesso negado.' });
+    }
+
+    if (rental.status === 'returned' || rental.status === 'cancelled') {
+      return res.status(400).json({ message: 'Aluguel já foi finalizado ou cancelado.' });
+    }
+
+    await Rental.returnRental(id);
+    
+    res.status(200).json({ status: 'success', message: 'Devolução registrada. Produtos enviados para lavanderia.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao processar devolução.' });
+  }
+};
+
+exports.cancelRental = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const rental = await Rental.findById(id);
+    
+    if (!rental) return res.status(404).json({ message: 'Aluguel não encontrado' });
+    
+    if (req.user.storeId && rental.store_id !== req.user.storeId) {
+      return res.status(403).json({ message: 'Acesso negado.' });
+    }
+
+    // Regra: Não pode cancelar se já retirou (picked_up). Aí tem que ser devolução.
+    if (rental.status === 'picked_up' || rental.status === 'returned') {
+      return res.status(400).json({ message: 'Não é possível cancelar um aluguel em andamento ou finalizado.' });
+    }
+
+    await Rental.cancelRental(id);
+    
+    res.status(200).json({ status: 'success', message: 'Aluguel cancelado e produtos liberados.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao cancelar aluguel.' });
+  }
 };

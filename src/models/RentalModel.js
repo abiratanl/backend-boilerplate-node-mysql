@@ -146,6 +146,79 @@ class RentalModel {
     const [rows] = await db.query(sql, params);
     return rows;
   }
+
+  static async returnRental(id) {
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      // 1. Busca os itens para saber quais produtos liberar
+      const [items] = await conn.query('SELECT product_id FROM rental_items WHERE rental_id = ?', [id]);
+      
+      // 2. Atualiza Status dos Produtos
+      // Regra de Negócio: Ao devolver, o produto vai para 'laundry' (Lavanderia) ou direto para 'available'?
+      // Vamos assumir 'laundry' por segurança higiênica.
+      for (const item of items) {
+        await conn.query(
+          "UPDATE products SET status = 'laundry' WHERE id = ?", 
+          [item.product_id]
+        );
+      }
+
+      // 3. Atualiza o Aluguel (Data real de devolução e Status)
+      await conn.query(
+        "UPDATE rentals SET status = 'returned', returned_at = NOW() WHERE id = ?", 
+        [id]
+      );
+
+      await conn.commit();
+      conn.release();
+      return true;
+
+    } catch (error) {
+      await conn.rollback();
+      conn.release();
+      throw error;
+    }
+  }
+
+  /**
+   * Cancela uma reserva e libera os produtos imediatamente
+   */
+  static async cancelRental(id) {
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      // 1. Busca itens
+      const [items] = await conn.query('SELECT product_id FROM rental_items WHERE rental_id = ?', [id]);
+      
+      // 2. Libera produtos (voltam a ficar available)
+      for (const item of items) {
+        await conn.query(
+          "UPDATE products SET status = 'available' WHERE id = ?", 
+          [item.product_id]
+        );
+      }
+
+      // 3. Atualiza status do aluguel
+      // Nota: As parcelas financeiras podem ser canceladas aqui também se desejar,
+      // mas vamos manter simples por enquanto.
+      await conn.query(
+        "UPDATE rentals SET status = 'cancelled' WHERE id = ?", 
+        [id]
+      );
+
+      await conn.commit();
+      conn.release();
+      return true;
+
+    } catch (error) {
+      await conn.rollback();
+      conn.release();
+      throw error;
+    }
+  }
 }
 
 module.exports = RentalModel;
