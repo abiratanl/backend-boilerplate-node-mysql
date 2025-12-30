@@ -1,14 +1,15 @@
-// 1. LOAD ENVIRONMENT VARIABLES (Crucial for connecting to the database)
+// 1. LOAD ENVIRONMENT VARIABLES
 require('dotenv').config();
 
 const request = require('supertest');
-const { v4: uuidv4 } = require('uuid'); // <--- Importando UUID
+const { v4: uuidv4 } = require('uuid');
 const app = require('../src/app');
 const db = require('../src/config/database');
 const bcrypt = require('bcryptjs');
 
 const testUser = {
-  id: uuidv4(), // <--- Gerando ID
+  id: uuidv4(),
+  store_id: null, // <--- ADICIONADO: Admins não têm loja específica
   name: 'Auth Test User',
   email: 'auth.test@example.com',
   password: 'testpassword123',
@@ -19,19 +20,24 @@ let authToken;
 
 describe('AUTHENTICATION (AUTH) TESTS', () => {
   beforeAll(async () => {
-    // Clean up before you start to avoid conflicts.
+    // Limpeza inicial
     if (db && db.query) {
       await db.query('DELETE FROM users WHERE email = ?', [testUser.email]);
     }
 
     try {
       const hashedPassword = await bcrypt.hash(testUser.password, 10);
+      
+      // === CORREÇÃO AQUI ===
+      // Adicionamos store_id na query SQL para evitar erro de coluna
       const insertQuery = `
-        INSERT INTO users (id, name, email, password, role, is_active, must_change_password)
-        VALUES (?, ?, ?, ?, ?, true, false)
+        INSERT INTO users (id, store_id, name, email, password, role, is_active, must_change_password)
+        VALUES (?, ?, ?, ?, ?, ?, true, false)
       `;
+      
       await db.query(insertQuery, [
         testUser.id,
+        testUser.store_id, // <--- Passando NULL
         testUser.name,
         testUser.email,
         hashedPassword,
@@ -44,10 +50,8 @@ describe('AUTHENTICATION (AUTH) TESTS', () => {
   });
 
   afterAll(async () => {
-    // Limpeza final
     await db.query('DELETE FROM users WHERE email = ?', [testUser.email]);
-    // Optional: Close the connection if necessary, but beware of pool conflicts.
-    // await db.end();
+    // await db.end(); // Cuidado com conflito de pool se tiver outros testes
   });
 
   it('Should successfully log in and return a JWT token (200)', async () => {
@@ -61,6 +65,10 @@ describe('AUTHENTICATION (AUTH) TESTS', () => {
 
     expect(response.body.status).toBe('success');
     expect(response.body.token).toBeDefined();
+    
+    // Opcional: Verificar se o user retornado tem a estrutura nova
+    expect(response.body.data.user).toHaveProperty('store_id');
+    
     authToken = response.body.token;
   });
 

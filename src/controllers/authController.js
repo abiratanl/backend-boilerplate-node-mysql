@@ -2,14 +2,65 @@ const crypto = require('crypto'); // Built-in Node module
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const db = require('../config/database');
+const User = require('../models/userModel'); // Import User Model for 'create' logic
 
 /**
  * Helper function to generate JWT Token
+ * UPDATED: Now includes 'storeId' in the payload so the frontend knows the context.
  */
-const signToken = (id, email, role) => {
-  return jwt.sign({ id, email, role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '1h',
-  });
+const signToken = (id, email, role, storeId) => {
+  return jwt.sign(
+    { id, email, role, storeId }, // Payload
+    process.env.JWT_SECRET, 
+    { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
+  );
+};
+
+/**
+ * @desc    Register a new user (Admin, Owner, Attendant, or Client)
+ * @route   POST /api/auth/register
+ * @access  Public (or Protected if creating admins)
+ */
+exports.register = async (req, res) => {
+  try {
+    const { name, email, password, store_id, role } = req.body;
+
+    // 1. Validation or Security checks can go here
+    // e.g., if (role === 'admin' && !req.user.isAdmin) return error...
+
+    // 2. Create User using the Model (which handles hashing and UUIDs)
+    const newUser = await User.create({
+      name,
+      email,
+      password,
+      store_id: store_id || null, // Ensure null if empty
+      role: role || 'cliente'
+    });
+
+    // 3. Generate Token (Optional: auto-login after register)
+    const token = signToken(newUser.id, newUser.email, newUser.role, newUser.store_id);
+
+    res.status(201).json({
+      status: 'success',
+      message: 'User created successfully',
+      token,
+      data: {
+        user: newUser
+      }
+    });
+
+  } catch (error) {
+    // Handle Duplicate Email
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ status: 'error', message: 'Email already in use.' });
+    }
+    // Handle Invalid Store ID
+    if (error.code === 'ER_NO_REFERENCED_ROW_2') {
+      return res.status(400).json({ status: 'error', message: 'Invalid Store ID provided.' });
+    }
+    console.error('Register Error:', error);
+    res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+  }
 };
 
 /**
@@ -25,18 +76,19 @@ exports.login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         status: 'error',
-        message: 'Por favor, entre com o Email e Senha',
+        message: 'Please provide Email and Password',
       });
     }
 
     // 2. Check if user exists
+    // We select * so 'store_id' is included automatically
     const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
     const user = rows[0];
 
     if (!user) {
       return res.status(401).json({
         status: 'error',
-        message: 'Email ou Senha inválidos',
+        message: 'Invalid Email or Password',
       });
     }
 
@@ -44,7 +96,7 @@ exports.login = async (req, res) => {
     if (!user.is_active) {
       return res.status(403).json({
         status: 'error',
-        message: 'Sua conta está inativa. Entre em contato com o administrador.',
+        message: 'Your account is inactive. Please contact the administrator.',
       });
     }
 
@@ -54,29 +106,39 @@ exports.login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         status: 'error',
-        message: 'Imail ou Senha inválidos',
+        message: 'Invalid Email or Password',
       });
+    }
+
+    // =================================================================
+    // 🔍 INTEGRITY CHECK: STORE CONSISTENCY
+    // If user is 'atendente' (staff) but has no store assigned, warn or block.
+    // =================================================================
+    if (user.role === 'atendente' && !user.store_id) {
+       console.warn(`[Auth Warning] Staff user ${user.id} has no Store ID assigned.`);
+       // Optional: Block login if strict mode is desired
+       // return res.status(403).json({ status: 'error', message: 'Staff account configuration error.' });
     }
 
     // =================================================================
     //                🛑 TOLL: REQUIRING PASSWORD CHANGE
     // =================================================================
     if (user.must_change_password) {
-      // We generated a token, but received a specific 403 (Forbidden) error.
-      // The frontend will read the code 'PASSWORD_CHANGE_REQUIRED' and redirect to the password change screen.
-      const tempToken = signToken(user.id, user.email, user.role);
+      // Pass store_id to temp token as well
+      const tempToken = signToken(user.id, user.email, user.role, user.store_id);
 
       return res.status(403).json({
         status: 'fail',
-        code: 'PASSWORD_CHANGE_REQUIRED', // The frontend uses this to know what to do.
-        message: 'É necessário alterar sua senha no primeiro acesso.',
-        token: tempToken, // Temporary token to enable the exchange request.
+        code: 'PASSWORD_CHANGE_REQUIRED',
+        message: 'You must change your password on first login.',
+        token: tempToken,
       });
     }
     // =================================================================
 
     // 5. If everything ok, send token to client
-    const token = signToken(user.id, user.email, user.role);
+    // UPDATED: Passing user.store_id to the token generator
+    const token = signToken(user.id, user.email, user.role, user.store_id);
 
     // Remove password from output (security)
     user.password = undefined;
@@ -85,23 +147,18 @@ exports.login = async (req, res) => {
       status: 'success',
       token,
       data: {
-        user,
+        user, // This object now includes 'store_id'
       },
     });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
       status: 'error',
-      message: 'Erro interno do servidor',
+      message: 'Internal Server Error',
     });
   }
 };
 
-/**
- * @desc    Forgot Password - Generate token and mock email sending
- * @route   POST /api/auth/forgot-password
- * @access  Public
- */
 /**
  * @desc    Forgot Password - Generate token and mock email sending
  * @route   POST /api/auth/forgot-password
@@ -113,7 +170,7 @@ exports.forgotPassword = async (req, res) => {
     if (!email) {
       return res
         .status(400)
-        .json({ status: 'error', message: 'Por favor, insira um Email válido.' });
+        .json({ status: 'error', message: 'Please provide a valid Email.' });
     }
 
     // 1. Check if user exists
@@ -121,6 +178,7 @@ exports.forgotPassword = async (req, res) => {
     const user = rows[0];
 
     if (!user) {
+      // Security: Do not reveal if user exists or not
       return res.status(200).json({
         status: 'success',
         message: 'Token sent to email (if user exists).',
@@ -144,7 +202,7 @@ exports.forgotPassword = async (req, res) => {
 
     // 5. Mock Email Sending
     const resetURL = `${req.protocol}://${req.get('host')}/api/users/resetPassword/${resetToken}`;
-    console.log(`🔗 Link de Reset (Simulação): ${resetURL}`);
+    console.log(`🔗 Reset Link (Simulation): ${resetURL}`);
 
     console.log('============================================');
     console.log('📧 EMAIL MOCK (Forgot Password)');
@@ -170,7 +228,7 @@ exports.forgotPassword = async (req, res) => {
 exports.resetPassword = async (req, res) => {
   try {
     const { password } = req.body;
-    if (!password) return res.status(400).json({ message: 'Por favor, entre com a nova senha.' });
+    if (!password) return res.status(400).json({ message: 'Please provide the new password.' });
 
     // 1. Get token from URL and hash it (to compare with DB)
     const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
@@ -183,7 +241,7 @@ exports.resetPassword = async (req, res) => {
     const user = rows[0];
 
     if (!user) {
-      return res.status(400).json({ status: 'error', message: 'Token inválido ou expirado.' });
+      return res.status(400).json({ status: 'error', message: 'Token is invalid or has expired.' });
     }
 
     // 3. Update Password and Clear Tokens
@@ -196,18 +254,18 @@ exports.resetPassword = async (req, res) => {
 
     res.status(200).json({
       status: 'success',
-      message: 'Senha alterado com sucesso. Por favor faça login novamente.',
+      message: 'Password changed successfully. Please login again.',
     });
   } catch (error) {
     console.error('Reset Password Error:', error);
-    res.status(500).json({ status: 'error', message: 'Erro interno' });
+    res.status(500).json({ status: 'error', message: 'Internal Server Error' });
   }
 };
 
 /**
  * @desc    Change password (can be used on first login or in profile)
  * @route   POST /api/auth/change-password
- * @access  Private (Requer Token)
+ * @access  Private (Requires Token)
  */
 exports.changePassword = async (req, res) => {
   try {
@@ -218,7 +276,7 @@ exports.changePassword = async (req, res) => {
     const userId = req.user.id;
 
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ message: 'Informe a senha atual e a nova senha.' });
+      return res.status(400).json({ message: 'Please provide current and new password.' });
     }
 
     // 3. We searched for the user in the database to check their current password.
@@ -226,13 +284,13 @@ exports.changePassword = async (req, res) => {
     const user = rows[0];
 
     if (!user) {
-      return res.status(404).json({ message: 'Usuário não encontrado.' });
+      return res.status(404).json({ message: 'User not found.' });
     }
 
     // 4. Check if the "Current Password" matches the one on file with the bank.
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'A senha atual está incorreta.' });
+      return res.status(401).json({ message: 'Current password is incorrect.' });
     }
 
     // 5. Encrypt the NEW password
@@ -246,10 +304,10 @@ exports.changePassword = async (req, res) => {
 
     res.status(200).json({
       status: 'success',
-      message: 'Senha alterada com sucesso! Você já pode usar o sistema normalmente.',
+      message: 'Password changed successfully!',
     });
   } catch (error) {
     console.error('Change Password Error:', error);
-    res.status(500).json({ message: 'Erro interno ao trocar senha.' });
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };

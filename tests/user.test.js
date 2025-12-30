@@ -6,17 +6,19 @@ const UserModel = require('../src/models/userModel');
 jest.mock('../src/models/userModel');
 jest.mock('../src/config/database', () => ({
   query: jest.fn(),
-  end: jest.fn(), // Mock to avoid connection errors
+  end: jest.fn(),
 }));
+
 jest.mock('../src/middlewares/authMiddleware', () => ({
   protect: (req, res, next) => {
-    req.user = { id: 'admin-id', role: 'admin' }; // Simulate Logged-in Admin
+    // O mock do admin logado deve ter storeId (null se for global)
+    req.user = { id: 'admin-id', role: 'admin', storeId: null }; 
     next();
   },
   restrictTo:
     (..._roles) =>
     (req, res, next) =>
-      next(), // It allows everything.
+      next(),
 }));
 
 describe('User API Endpoints (Unit Tests)', () => {
@@ -24,37 +26,47 @@ describe('User API Endpoints (Unit Tests)', () => {
     jest.clearAllMocks();
   });
 
+  // === BLOCO CORRIGIDO AQUI ===
   it('POST /api/users › should create a new user successfully', async () => {
-    const newUser = {
+    const newUserInput = {
       name: 'John Doe',
       email: 'john@example.com',
       role: 'atendente',
+      store_id: 'uuid-loja-1' 
     };
 
-    // Mock of the Model's behavior
-    UserModel.findByEmail.mockResolvedValue(null); // Não existe ainda
+    UserModel.findByEmail.mockResolvedValue(null);
+    
     UserModel.create.mockResolvedValue({
       id: 'uuid-123',
-      ...newUser,
+      store_id: 'uuid-loja-1',
+      name: newUserInput.name,
+      email: newUserInput.email,
+      role: newUserInput.role,
       is_active: true,
       must_change_password: true,
     });
 
-    const res = await request(app).post('/api/users').send(newUser);
+    const res = await request(app).post('/api/users').send(newUserInput);
 
     expect(res.statusCode).toEqual(201);
     expect(res.body.status).toBe('success');
-    expect(res.body.message).toMatch(/email/i); // Verifica msg de email
+    expect(res.body.message).toMatch(/email/i); 
+    
+    // Verificação flexível (data ou user)
+    const userResponse = res.body.data || res.body.user || res.body; 
+    expect(userResponse).toHaveProperty('store_id');
   });
+  // ============================
 
   it('POST /api/users › should prevent duplicate emails', async () => {
     const existingUser = {
       name: 'Jane Doe',
       email: 'jane@example.com',
       password: '123',
+      store_id: null
     };
 
-    // It simulates that it ALREADY EXISTS in the database.
     UserModel.findByEmail.mockResolvedValue(existingUser);
 
     const res = await request(app).post('/api/users').send(existingUser);
@@ -64,7 +76,6 @@ describe('User API Endpoints (Unit Tests)', () => {
   });
 
   it('DELETE /api/users/:id › should soft delete a user', async () => {
-    // Simulated deletion successfully.
     UserModel.softDelete.mockResolvedValue(true);
 
     const res = await request(app).delete('/api/users/uuid-123');
@@ -74,7 +85,6 @@ describe('User API Endpoints (Unit Tests)', () => {
   });
 
   it('DELETE /api/users/:id › should return 404 if user not found', async () => {
-    // Simulates a deletion failure (user does not exist)
     UserModel.softDelete.mockResolvedValue(false);
 
     const res = await request(app).delete('/api/users/uuid-not-found');
