@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const UserModel = require('../models/userModel');
+const UserModel = require('../models/UserModel');
 const bcrypt = require('bcryptjs');
 const db = require('../config/database'); 
 const { uploadImage } = require('../services/uploadService');

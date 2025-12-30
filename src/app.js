@@ -3,8 +3,10 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 //const YAML = require('yamljs');
 
-const userRoutes = require('./routes/userRoutes');
+
 const authRoutes = require('./routes/authRoutes'); // <--- Import Auth Routes
+const categoryRoutes = require('./routes/categoryRoutes');
+const userRoutes = require('./routes/userRoutes');
 const { apiLimiter } = require('./middlewares/rateLimitMiddleware');
 //const swaggerDocument = YAML.load('./src/swagger.yaml');
 
@@ -40,8 +42,12 @@ app.get('/', (req, res) => {
   });
 });
 
+// Use Auth Routes
 app.use('/api/users', userRoutes);
-app.use('/api/auth', authRoutes); // <--- Use Auth Routes
+app.use('/api/auth', authRoutes); 
+
+// Use Category Routes
+app.use('/api/categories', categoryRoutes);
 
 /**
  * Global Error Handler

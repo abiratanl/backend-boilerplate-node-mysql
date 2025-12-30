@@ -1,9 +1,9 @@
 const request = require('supertest');
 const app = require('../src/app');
-const UserModel = require('../src/models/userModel');
+const UserModel = require('../src/models/UserModel');
 
 // MOCK OF THE dependencies
-jest.mock('../src/models/userModel');
+jest.mock('../src/models/UserModel');
 jest.mock('../src/config/database', () => ({
   query: jest.fn(),
   end: jest.fn(),

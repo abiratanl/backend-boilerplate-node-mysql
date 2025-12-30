@@ -2,7 +2,7 @@ const crypto = require('crypto'); // Built-in Node module
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const db = require('../config/database');
-const User = require('../models/userModel'); // Import User Model for 'create' logic
+const User = require('../models/UserModel'); // Import User Model for 'create' logic
 
 /**
  * Helper function to generate JWT Token
