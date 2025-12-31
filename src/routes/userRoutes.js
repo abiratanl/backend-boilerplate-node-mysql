@@ -10,19 +10,22 @@ router.use(protect);
 
 router.patch(
   '/avatar',
-  upload.single('avatar'), // Middleware que processa a imagem
+  upload.single('avatar'), 
   UserController.updateAvatar
 );
 
-// --- Current User Routes (MUST BE BEFORE /:id) ---
+// --- Current User Routes ---
 router.get('/me', UserController.getMe);
 router.put('/me', UserController.updateMe);
 
 
 // --- Admin / Generic Routes ---
 router.get('/', restrictTo('admin'), UserController.getAllUsers);
-router.get('/:id', UserController.getUserById); // If /me was below this, express would think 'me' is an id
+router.get('/:id', UserController.getUserById); 
+
+// A ROTA QUE ESTAMOS TESTANDO:
 router.post('/', restrictTo('admin'), UserController.createUser);
+
 router.put('/:id', restrictTo('admin'), UserController.updateUser);
 router.delete('/:id', restrictTo('admin'), UserController.deleteUser);
 

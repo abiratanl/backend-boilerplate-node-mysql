@@ -31,7 +31,7 @@ paths:
               properties:
                 email:
                   type: string
-                  example: admin@loja.com
+                  example: admin@teste.com
                 password:
                   type: string
                   example: 123456
@@ -128,6 +128,8 @@ paths:
     get:
       summary: List all users (Admin only)
       tags: [Users]
+      security:
+        - bearerAuth: []  # <--- Garante que o cadeado apareça e envie o token
       responses:
         200:
           description: List of users
@@ -137,6 +139,8 @@ paths:
     post:
       summary: Create a new user (Admin only)
       tags: [Users]
+      security:
+        - bearerAuth: []  # <--- Garante que o cadeado apareça e envie o token
       requestBody:
         required: true
         content:
@@ -146,26 +150,31 @@ paths:
               required:
                 - name
                 - email
-                - password
+                - role
+                - store_id
               properties:
                 name:
                   type: string
                   example: New Employee
                 email:
                   type: string
-                  example: novo@store.com
-                password:
-                  type: string
-                  example: senha123
+                  example: admin@teste.com
                 role:
                   type: string
-                  enum: [admin, proprietario, atendente]
+                  enum: [admin, proprietario, atendente, cliente]
                   example: atendente
+                store_id:                   
+                  type: string            
+                  format: uuid            
+                  description: Obrigatório para atendentes 
+                  example: "a6763a6f-09df-46bf-b076-1c553e76e3ec" 
       responses:
         201:
           description: User created
         409:
           description: Email already exists.
+        401:
+          description: Unauthorized (Token missing or invalid)
 
   /api/users/{id}:
     get:

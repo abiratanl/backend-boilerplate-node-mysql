@@ -47,7 +47,7 @@ class UserModel {
 
     await db.query(sql, [
       id,
-      storeIdValue, // <--- Novo campo
+      storeIdValue,
       name,
       email,
       password,
@@ -116,11 +116,38 @@ class UserModel {
    * Get all active users.
    */
   static async findAll() {
-    // ADDED: store_id no select
     const sql =
       'SELECT id, store_id, name, email, role, is_active, created_at FROM users WHERE deleted_at IS NULL';
     const [rows] = await db.query(sql);
     return rows;
+  }
+
+  // Busca usuário pelo token hash e verifica expiração
+  static async findByResetToken(hashedToken) {
+    // Usamos ? para a data atual para garantir sincronia com o fuso do Node
+    const sql = `
+      SELECT * FROM users 
+      WHERE password_reset_token = ? 
+      AND password_reset_expires > ?
+    `;
+    
+    const now = new Date(); // Data/Hora exata do servidor Node
+    const [rows] = await db.query(sql, [hashedToken, now]);
+    return rows[0];
+  }
+
+  // Atualiza senha e limpa o token de reset
+  static async updatePasswordAfterReset(userId, newPasswordHash) {
+    const sql = `
+      UPDATE users 
+      SET 
+        password = ?, 
+        password_reset_token = NULL, 
+        password_reset_expires = NULL,
+        must_change_password = 0 
+      WHERE id = ?
+    `;
+    await db.query(sql, [newPasswordHash, userId]);
   }
 }
 

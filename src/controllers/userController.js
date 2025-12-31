@@ -105,7 +105,7 @@ class UserController {
    */
   static async createUser(req, res) {
     try {
-      const { name, email, _password, role } = req.body;
+      const { name, email, password, role, store_id } = req.body;
 
       // 1. Basic Validation
       if (!name || !email) {
@@ -136,10 +136,11 @@ class UserController {
         role,
         is_active: true,
         must_change_password: true,
+        store_id
       });
       // 5. ENVIO DE EMAIL
       const message = `
-      Bem-vindo ao sistema Tech-S!
+      Bem-vindo à plataforma Madri Noivas!
       Sua conta foi criada com sucesso.
       
       Login: ${email}

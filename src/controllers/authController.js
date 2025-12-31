@@ -203,12 +203,22 @@ exports.forgotPassword = async (req, res) => {
     );
 
     // 5. Email Sending
-    const resetURL = `${req.protocol}://${req.get('host')}/api/users/resetPassword/${resetToken}`;
+    const resetURL = `${req.protocol}://${req.get('host')}/api/auth/reset-password/${resetToken}`;
     const message = `
-      Você solicitou a redefinição de senha.
-      Por favor, faça uma requisição PUT para: \n\n ${resetURL} \n\n
-      Se você não solicitou isso, ignore este e-mail.
-    `;
+    Olá, ${user.name}.
+
+    Recebemos uma solicitação para redefinir sua senha de acesso.
+    
+    Se você estiver usando o sistema via Navegador/App, clique no link abaixo:
+    ${resetURL}
+
+    Se você precisa inserir o código manualmente (caso de teste), seu token é:
+    ${resetToken}
+
+    (Este link é válido por apenas 10 minutos).
+    
+    Se você não solicitou essa alteração, por favor ignore este e-mail.
+  `;
     
     await emailService.sendEmail({
       to: user.email,
@@ -233,38 +243,45 @@ exports.forgotPassword = async (req, res) => {
  */
 exports.resetPassword = async (req, res) => {
   try {
+    // 1. Receber dados
+    const { token } = req.params;
     const { password } = req.body;
-    if (!password) return res.status(400).json({ message: 'Please provide the new password.' });
 
-    // 1. Get token from URL and hash it (to compare with DB)
-    const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
-
-    // 2. Find user with valid token and not expired
-    const [rows] = await db.query(
-      'SELECT * FROM users WHERE password_reset_token = ? AND password_reset_expires > NOW()',
-      [hashedToken],
-    );
-    const user = rows[0];
-
-    if (!user) {
-      return res.status(400).json({ status: 'error', message: 'Token is invalid or has expired.' });
+    if (!password) {
+        return res.status(400).json({ message: 'Por favor, informe a nova senha.' });
     }
 
-    // 3. Update Password and Clear Tokens
-    const newPasswordHash = await bcrypt.hash(password, 10);
+    // 2. Hashear o token recebido (CRUCIAL: O banco guarda o hash, não o token puro)
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
 
-    await db.query(
-      'UPDATE users SET password = ?, password_reset_token = NULL, password_reset_expires = NULL WHERE id = ?',
-      [newPasswordHash, user.id],
-    );
+    // 3. Buscar usuário (Delegamos a query para o Model)
+    const user = await User.findByResetToken(hashedToken);
+
+    if (!user) {
+      return res.status(400).json({ 
+        status: 'error', 
+        message: 'O token é inválido ou expirou.' 
+      });
+    }
+
+    // 4. Criptografar a nova senha
+    // Usamos custo 12 para manter padrão com o userController
+    const newPasswordHash = await bcrypt.hash(password, 12);
+
+    // 5. Salvar no banco e limpar tokens (Delegamos para o Model)
+    await User.updatePasswordAfterReset(user.id, newPasswordHash);
 
     res.status(200).json({
       status: 'success',
-      message: 'Password changed successfully. Please login again.',
+      message: 'Senha alterada com sucesso! Faça login com a nova senha.',
     });
+
   } catch (error) {
     console.error('Reset Password Error:', error);
-    res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    res.status(500).json({ status: 'error', message: 'Erro interno ao redefinir senha.' });
   }
 };
 
