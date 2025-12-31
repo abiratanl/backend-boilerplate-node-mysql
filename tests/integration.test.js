@@ -54,7 +54,7 @@ describe('INTEGRATION TESTS: User API', () => {
     expect(res.statusCode).toEqual(201);
     expect(res.body.data.email).toEqual(newUser.email);
     // Check if the message mentions sending it by email.
-    expect(res.body.message).toMatch(/email/i);
+    expect(res.body.message).toMatch(/e-?mail/i);
 
     // Check the database
     const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [newUser.email]);

@@ -3,13 +3,36 @@ const router = express.Router();
 const productController = require('../controllers/productController');
 const { protect } = require('../middlewares/authMiddleware');
 
-// All product routes are protected for now.
+// 1. Importamos os middlewares de imagem
+const { uploadArray, optimizeAndUploadImages } = require('../middlewares/imageUploadMiddleware');
+
+// --- ÁREA PÚBLICA (Sugestão) ---
+// router.get('/featured', productController.getFeaturedProducts); (Será implementada para exibição de imagens na Home)
+
+// --- ÁREA RESTRITA (Painel Administrativo) ---
+// Todas as rotas abaixo exigem token de autenticação
 router.use(protect);
 
+// Rotas de Leitura
 router.get('/', productController.getAllProducts);
 router.get('/:id', productController.getProductById);
-router.post('/', productController.createProduct);
-router.put('/:id', productController.updateProduct);
+
+// Rota de Criação (POST)
+// Fluxo: Recebe arquivos -> Otimiza/Sobe R2 -> Controller salva no BD
+router.post('/', 
+    uploadArray,             // Middleware do Multer (recebe 'photos')
+    optimizeAndUploadImages, // Middleware do Sharp/R2 (gera thumbnails e full)
+    productController.createProduct 
+);
+
+// Rota de Atualização (PUT)
+// Também precisa aceitar imagens caso o usuário esteja adicionando fotos novas
+router.put('/:id', 
+    uploadArray, 
+    optimizeAndUploadImages, 
+    productController.updateProduct 
+);
+
 router.delete('/:id', productController.deleteProduct);
 
 module.exports = router;

@@ -206,7 +206,7 @@ exports.forgotPassword = async (req, res) => {
     const resetURL = `${req.protocol}://${req.get('host')}/api/users/resetPassword/${resetToken}`;
     const message = `
       Você solicitou a redefinição de senha.
-      Por favor, faça uma requisição PUT para: \n\n ${resetUrl} \n\n
+      Por favor, faça uma requisição PUT para: \n\n ${resetURL} \n\n
       Se você não solicitou isso, ignore este e-mail.
     `;
     
