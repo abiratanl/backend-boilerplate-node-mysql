@@ -1,32 +1,5 @@
 const jwt = require('jsonwebtoken');
 
-
-//SOMENTE PARA TESTE - EXCLUIR DEPOIS
-exports.protect = async (req, res, next) => {
-  // --- DEBUG AUTH (Início) ---
-  console.log('--- DEBUG AUTH ---');
-  console.log('Header recebido:', req.headers.authorization);
-  console.log('------------------');
-  // --- DEBUG AUTH (Fim) ---
-
-  // ... aqui continua o código original da sua função (verificação do token, etc) ...
-  // Lembre-se que o código original deve estar aqui dentro!
-  
-  // Exemplo genérico do restante, só para ilustrar o fechamento:
-  /*
-  let token;
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    token = req.headers.authorization.split(' ')[1];
-  }
-  if (!token) {
-    return next(new AppError('Você não está logado!', 401));
-  }
-  // ... verificação do token ...
-  next();
-  */
-
-}; // <--- O FECHAMENTO QUE FALTOU
-
 /**
  * Middleware to protect routes.
  * Verifies the JWT token from the 'Authorization' header.

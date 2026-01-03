@@ -11,6 +11,7 @@ const customerRoutes = require('./routes/customerRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const productRoutes = require('./routes/productRoutes');
 const rentalRoutes = require('./routes/rentalRoutes');
+const storeRoutes = require('./routes/storeRoutes');
 const transferRoutes = require('./routes/transferRoutes');
 const userRoutes = require('./routes/userRoutes');
 const { apiLimiter } = require('./middlewares/rateLimitMiddleware');
@@ -67,6 +68,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/rentals', rentalRoutes);
+app.use('/api/stores', storeRoutes); 
 app.use('/api/transfers', transferRoutes);
 
 /**

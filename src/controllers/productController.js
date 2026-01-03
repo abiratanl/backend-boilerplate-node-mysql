@@ -4,30 +4,43 @@ exports.getAllProducts = async (req, res) => {
   try {
     const filters = {};
     
-    // 1. Busca Global (para transferências entre lojas)
-    if (req.query.global_search === 'true') {
-        console.log(`[Busca Global] Utilizador ${req.user.id} pesquisando em todas as lojas.`);
+    // ============================================================
+    // LÓGICA DE FILTRO DE LOJA (CORRIGIDA)
+    // ============================================================
+    
+    // 1. Verifica se é Busca Global (Aceita 'true' string ou true boolean)
+    const isGlobal = req.query.global_search === 'true' || req.query.global_search === true;
+
+    if (isGlobal) {
+        // Se for global, NÃO adicionamos store_id ao filtro.
+        // Isso fará o banco trazer produtos de todas as lojas.
+        // (Futuramente, adicione aqui: if (req.user.role !== 'admin') return erro...)
+        console.log(`[BUSCA GLOBAL] Usuário ${req.user.id} visualizando todas as lojas.`);
     } else {
-        // Padrão: Filtra pela loja do utilizador
+        // 2. Se NÃO for global, aplicamos as restrições padrão:
+        
+        // Se o usuário tem loja fixa (Gerente/Vendedor), ele só vê a loja dele.
         if (req.user.storeId) {
             filters.store_id = req.user.storeId;
         }
-    }
-    
-    // Admin sem storeId pode filtrar manualmente
-    if (!req.user.storeId && req.query.store_id) {
-        filters.store_id = req.query.store_id;
+        
+        // Se for Admin (sem loja fixa) e quiser filtrar por uma específica via Dropdown
+        else if (req.query.store_id) {
+            filters.store_id = req.query.store_id;
+        }
     }
 
-    // Filtros de Query Params
+    // ============================================================
+    // OUTROS FILTROS
+    // ============================================================
+    
     if (req.query.category_id) filters.category_id = req.query.category_id;
     if (req.query.status) filters.status = req.query.status;
     
-    // Filtro novo para a Home Page (Produtos em Destaque)
+    // Filtro para Home Page (Destaques)
     if (req.query.is_featured) filters.is_featured = (req.query.is_featured === 'true');
 
-    // IMPORTANTE: O método Product.findAll no seu Model deve ser atualizado 
-    // para fazer o JOIN e trazer a 'url_thumb' da foto principal.
+    // Busca no Model (que já faz o JOIN com imagens e categorias)
     const products = await Product.findAll(filters);
     
     res.status(200).json({ status: 'success', results: products.length, data: products });
@@ -48,21 +61,21 @@ exports.getProductById = async (req, res) => {
       return res.status(404).json({ status: 'error', message: 'Produto não encontrado.' });
     }
 
-    // Segurança: Bloqueia acesso entre lojas (exceto admin global)
+    // Segurança: Bloqueia acesso entre lojas (exceto se for busca global ou admin)
+    // Se o usuário tem loja fixa e o produto é de outra loja -> Bloqueia
     if (req.user.storeId && product.store_id !== req.user.storeId) {
       return res.status(403).json({ status: 'error', message: 'Acesso negado a este produto.' });
     }
 
-    // 2. Busca as imagens associadas (Nova Tabela)
-    // Você precisará criar este método no seu ProductModel
+    // 2. Busca as imagens da galeria
     const images = await Product.getImagesByProductId(id);
 
     // Retorna o produto com o array de imagens dentro
     res.status(200).json({ 
         status: 'success', 
         data: {
-            ...product, // Espalha os dados do produto (nome, preço, etc)
-            images: images // Adiciona o array de fotos
+            ...product, 
+            images: images 
         } 
     });
   } catch (error) {
@@ -77,22 +90,31 @@ exports.createProduct = async (req, res) => {
       category_id, code, name, description, 
       size, color, brand, purchase_price, rental_price, 
       status, store_id, is_featured 
-      // Nota: image_url foi removido daqui, pois agora vem pelo req.processedImages
     } = req.body;
 
-    // Validações
+    // Validações Básicas
     if (!name || !rental_price || !code) {
       return res.status(400).json({ status: 'error', message: 'Nome, Código e Preço são obrigatórios.' });
     }
 
-    const finalStoreId = req.user.storeId || store_id;
+    // --- LÓGICA DE PERMISSÃO DE LOJA (MUDANÇA AQUI) ---
+    let finalStoreId;
 
-    if (!finalStoreId) {
-      return res.status(400).json({ status: 'error', message: 'É necessário vincular o produto a uma Loja.' });
+    // Verifique como você salvou o role no token JWT (pode ser 'admin', 'owner', 'superadmin')
+    const isAdmin = req.user.role === 'admin' || req.user.role === 'proprietario';
+
+    if (isAdmin) {
+        // Se é Admin, ele TEM que mandar o store_id pelo dropdown
+        if (!store_id) {
+            return res.status(400).json({ status: 'error', message: 'Administradores devem selecionar a Loja.' });
+        }
+        finalStoreId = store_id;
+    } else {
+        // Se é Funcionário, ignoramos o dropdown e forçamos a loja dele
+        finalStoreId = req.user.storeId;
     }
 
-    // 1. Cria o Produto na tabela principal
-    // O Model.create deve retornar o ID do novo produto criado
+    // 1. Cria o Produto
     const newProductId = await Product.create({
       store_id: finalStoreId,
       category_id,
@@ -108,8 +130,7 @@ exports.createProduct = async (req, res) => {
       is_featured: is_featured === 'true' || is_featured === true ? 1 : 0
     });
 
-    // 2. Salva as imagens na tabela product_images (Se houver upload)
-    // req.processedImages vem do middleware que criamos anteriormente
+    // 2. Salva as imagens (Se houver upload processado pelo middleware)
     if (req.processedImages && req.processedImages.length > 0) {
         await Product.addImages(newProductId, req.processedImages);
     }
@@ -130,10 +151,11 @@ exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Verificar existência e permissão
+    // Verificar existência
     const existingProduct = await Product.findById(id);
     if (!existingProduct) return res.status(404).json({ message: 'Produto não encontrado.' });
 
+    // Verificar permissão de loja
     if (req.user.storeId && existingProduct.store_id !== req.user.storeId) {
       return res.status(403).json({ message: 'Você não tem permissão para editar este produto.' });
     }
@@ -141,15 +163,9 @@ exports.updateProduct = async (req, res) => {
     // 1. Atualiza dados de texto
     const updated = await Product.update(id, req.body);
 
-    // 2. Se houver NOVAS fotos no upload, adiciona à galeria existente
+    // 2. Se houver NOVAS fotos, adiciona (não apaga as antigas aqui)
     if (req.processedImages && req.processedImages.length > 0) {
         await Product.addImages(id, req.processedImages);
-    }
-
-    if (!updated) {
-       // Atenção: Se o usuário só enviou fotos e não mudou texto, o update pode retornar false/0.
-       // Ajuste essa lógica conforme o retorno do seu ORM.
-       // return res.status(400).json({ status: 'error', message: 'Não foi possível atualizar.' });
     }
 
     res.status(200).json({ status: 'success', message: 'Produto atualizado com sucesso.' });
@@ -170,8 +186,7 @@ exports.deleteProduct = async (req, res) => {
       return res.status(403).json({ message: 'Você não tem permissão para excluir este produto.' });
     }
 
-    // O delete do produto deve disparar um CASCADE no banco para apagar as linhas da tabela images.
-    // Opcional: Criar uma lógica aqui para apagar os arquivos do R2 para economizar espaço (clean up).
+    // O delete do produto dispara CASCADE na tabela de imagens
     await Product.delete(id);
 
     res.status(200).json({ status: 'success', message: 'Produto removido com sucesso.' });

@@ -5,60 +5,41 @@ class ProductModel {
   
   // --- LEITURA ---
 
-  static async findAll(filters = {}) {
-    // A mágica aqui: Uma subquery para pegar a miniatura correta para a listagem
-    // Prioridade: 1. Imagem marcada como Principal (is_main=1) -> 2. Imagem mais antiga (created_at ASC)
-    const sqlSelectImage = `
-      (SELECT url_thumb 
-       FROM product_images 
-       WHERE product_id = p.id 
-       ORDER BY is_main DESC, created_at ASC 
-       LIMIT 1) as thumbnail
-    `;
+  // No arquivo ProductModel.js
 
-    let sql = `
-      SELECT 
-        p.*, 
-        c.name as category_name, 
-        s.name as store_name,
-        ${sqlSelectImage}
-      FROM products p
-      LEFT JOIN categories c ON p.category_id = c.id
-      JOIN stores s ON p.store_id = s.id
-      WHERE 1=1
+static async findAll(filters = {}) {
+    let query = `
+        SELECT p.*, pi.url_thumb as image_url, c.name as category_name
+        FROM products p
+        LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = 1
+        LEFT JOIN categories c ON p.category_id = c.id
+        WHERE 1=1
     `;
     
-    const params = [];
+    const values = [];
 
+    // 1. Filtro de Loja (Se o usuário tiver loja fixa, filtra. Se for Admin Global, vê tudo)
+    // Se você quer ver TUDO para testar, comente este bloco temporariamente.
     if (filters.store_id) {
-      sql += ' AND p.store_id = ?';
-      params.push(filters.store_id);
-    }
-    if (filters.category_id) {
-      sql += ' AND p.category_id = ?';
-      params.push(filters.category_id);
-    }
-    if (filters.status) {
-      sql += ' AND p.status = ?';
-      params.push(filters.status);
-    }
-    // Filtro para Home Page
-    if (filters.is_featured !== undefined) {
-        sql += ' AND p.is_featured = ?';
-        params.push(filters.is_featured);
-    }
-    // Busca por código parcial
-    if (filters.code) {
-      sql += ' AND p.code LIKE ?';
-      params.push(`%${filters.code}%`);
+        query += ` AND p.store_id = ?`;
+        values.push(filters.store_id);
     }
 
-    sql += ' ORDER BY p.name ASC';
+    // 2. Filtro de Categoria (Aqui está o conserto do dropdown)
+    // O Frontend manda 'category_id', o backend tem que usar isso.
+    if (filters.category_id && filters.category_id !== '') {
+        query += ` AND p.category_id = ?`;
+        values.push(filters.category_id);
+    }
 
-    const [rows] = await db.query(sql, params);
+    query += ` ORDER BY p.created_at DESC`;
+
+    // Debug: Mostra no terminal a query que está sendo feita
+    console.log('Query Produtos:', query, values);
+
+    const [rows] = await db.execute(query, values);
     return rows;
-  }
-
+}
   static async findById(id) {
     // Aqui trazemos apenas os dados crus do produto. 
     // As imagens são buscadas separadamente pelo controller usando getImagesByProductId
