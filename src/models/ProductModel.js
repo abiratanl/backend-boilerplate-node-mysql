@@ -115,7 +115,6 @@ class ProductModel {
       store_id, category_id, code, name, description, 
       size, color, brand, purchase_price, rental_price, 
       status, is_featured 
-      // Nota: image_url removido
     } = data;
 
     const sql = `

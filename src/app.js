@@ -18,10 +18,12 @@ const { apiLimiter } = require('./middlewares/rateLimitMiddleware');
 
 const app = express();
 
-// 2. Configure (Permitindo seu Frontend)
+// Configuração  permissiva para desenvolvimento
 app.use(cors({
-    origin: 'http://localhost:5173', // A porta onde o Vite roda
-    credentials: true // Importante se usar cookies/sessões
+    origin: 'http://localhost:5173', // O endereço exato do seu Frontend
+    credentials: true, // Permite envio de cookies/headers de autorização
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 

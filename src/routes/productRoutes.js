@@ -4,7 +4,7 @@ const productController = require('../controllers/productController');
 const { protect } = require('../middlewares/authMiddleware');
 
 // 1. Importamos os middlewares de imagem
-const { uploadArray, optimizeAndUploadImages } = require('../middlewares/imageUploadMiddleware');
+const { uploadArray, optimizeAndUploadImages } = require('../middlewares/imageMiddleware');
 
 // --- ÁREA PÚBLICA (Sugestão) ---
 // router.get('/featured', productController.getFeaturedProducts); (Será implementada para exibição de imagens na Home)
