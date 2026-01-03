@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 //const YAML = require('yamljs');
@@ -16,6 +17,13 @@ const { apiLimiter } = require('./middlewares/rateLimitMiddleware');
 //const swaggerDocument = YAML.load('./src/swagger.yaml');
 
 const app = express();
+
+// 2. Configure (Permitindo seu Frontend)
+app.use(cors({
+    origin: 'http://localhost:5173', // A porta onde o Vite roda
+    credentials: true // Importante se usar cookies/sessões
+}));
+
 
 /**
  * Middlewares
