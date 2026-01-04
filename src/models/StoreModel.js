@@ -7,6 +7,13 @@ class Store {
     const [rows] = await db.execute(query);
     return rows;
   }
+
+  // NOVO MÉTODO: Busca uma loja específica por ID para pegar o telefone
+  static async findById(id) {
+    const query = `SELECT * FROM stores WHERE id = ?`;
+    const [rows] = await db.execute(query, [id]);
+    return rows[0]; // Retorna a primeira linha encontrada ou undefined
+  }
 }
 
 module.exports = Store;

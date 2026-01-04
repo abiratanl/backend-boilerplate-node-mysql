@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const storeController = require('../controllers/storeController');
-
-// 1. Importando com o nome CORRETO (protect)
 const { protect } = require('../middlewares/authMiddleware'); 
 
-// 2. Rota GET /stores (Agora protegida com o 'protect')
-// Só quem tem token válido consegue ver a lista
+// Lista todas as lojas
 router.get('/', protect, storeController.getAllStores);
+
+// BUSCA UMA LOJA ESPECÍFICA (Adicione esta linha)
+router.get('/:id', storeController.getStoreById); 
 
 module.exports = router;

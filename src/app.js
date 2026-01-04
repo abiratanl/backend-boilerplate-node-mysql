@@ -1,11 +1,13 @@
+
 const express = require('express');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./config/swagger');
-//const YAML = require('yamljs');
 
+// --- IMPORTAÇÃO DA DOCUMENTAÇÃO ---
+const swaggerDocument = require('./docs/swagger'); // <--- Aqui está a mágica
 
-const authRoutes = require('./routes/authRoutes'); // <--- Import Auth Routes
+// --- IMPORTS DE ROTAS ---
+const authRoutes = require('./routes/authRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const customerRoutes = require('./routes/customerRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
@@ -15,41 +17,29 @@ const storeRoutes = require('./routes/storeRoutes');
 const transferRoutes = require('./routes/transferRoutes');
 const userRoutes = require('./routes/userRoutes');
 const { apiLimiter } = require('./middlewares/rateLimitMiddleware');
-//const swaggerDocument = YAML.load('./src/swagger.yaml');
 
 const app = express();
 
-// Configuração  permissiva para desenvolvimento
+// --- CONFIGURAÇÃO CORS ---
 app.use(cors({
-    origin: 'http://localhost:5173', // O endereço exato do seu Frontend
-    credentials: true, // Permite envio de cookies/headers de autorização
+    origin: 'http://localhost:5173', 
+    credentials: true, 
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-
-/**
- * Middlewares
- */
+// --- MIDDLEWARES ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/**
- * Documentation
- */
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.get('/api-docs.json', (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
-});
-//app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// --- ROTA DO SWAGGER ---
+// Carrega o arquivo externo que criamos
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Apply Global Rate Limiter to all API routes
+// Rate Limiter
 app.use('/api', apiLimiter);
 
-/**
- * Routes
- */
+// Rota Raiz
 app.get('/', (req, res) => {
   res.status(200).json({
     status: 'success',
@@ -58,11 +48,9 @@ app.get('/', (req, res) => {
   });
 });
 
-// Use Auth Routes
+// --- ROTAS DA API ---
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes); 
-
-
 app.use('/api/categories', categoryRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/payments', paymentRoutes);
@@ -71,9 +59,7 @@ app.use('/api/rentals', rentalRoutes);
 app.use('/api/stores', storeRoutes); 
 app.use('/api/transfers', transferRoutes);
 
-/**
- * Global Error Handler
- */
+// Global Error Handler
 app.use((err, req, res, _next) => {
   console.error(err.stack);
   res.status(500).json({
