@@ -33,16 +33,16 @@ exports.getCustomerById = async (req, res) => {
 exports.createCustomer = async (req, res) => {
   try {
     const { 
-      name, cpf, birth_date, measurements, notes, 
-      addresses, contacts // Arrays esperados
-    } = req.body;
+      name, rg, cpf, birth_date, measurements, notes, 
+      addresses, contacts 
+    } = req.body; // Adicionado 'rg' aqui na extração
 
     // Validação Básica
     if (!name || !contacts || contacts.length === 0) {
       return res.status(400).json({ status: 'error', message: 'Nome e pelo menos um contato são obrigatórios.' });
     }
 
-    // Verificar se CPF já existe (embora o banco barre, é bom checar antes para msg amigável)
+    // Verificar se CPF já existe
     if (cpf) {
       const existing = await Customer.findByCpf(cpf);
       if (existing) {
@@ -50,19 +50,26 @@ exports.createCustomer = async (req, res) => {
       }
     }
 
+    // Verificar se RG já existe
+    if (rg) {
+      const existingRg = await Customer.findByRg(rg);
+      if (existingRg) {
+        return res.status(409).json({ status: 'error', message: 'RG já cadastrado.' });
+      }
+    }
+
     const newCustomer = await Customer.create({
-      name, cpf, birth_date, measurements, notes, addresses, contacts
+      name, rg, cpf, birth_date, measurements, notes, addresses, contacts
     });
 
     res.status(201).json({ status: 'success', data: newCustomer });
 
   } catch (error) {
-    // Captura erro de duplicidade do MySQL (caso passe pela validação acima)
     if (error.code === 'ER_DUP_ENTRY') {
-      return res.status(409).json({ status: 'error', message: 'Dados duplicados (provavelmente CPF).' });
+      return res.status(409).json({ status: 'error', message: 'Dados duplicados (CPF ou RG já existem).' });
     }
     console.error('Error creating customer:', error);
-    res.status(500).json({ status: 'error', message: 'Erro ao criar cliente.' });
+    res.status(500).json({ status: 'error', message: 'Erro interno ao criar cliente.' });
   }
 };
 
