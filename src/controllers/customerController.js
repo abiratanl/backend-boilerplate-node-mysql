@@ -3,7 +3,8 @@ const Customer = require('../models/CustomerModel');
 exports.getAllCustomers = async (req, res) => {
   try {
     const filters = {
-      search: req.query.search 
+      search: req.query.search,
+      includeInactives: req.query.includeInactives === 'true'
     };
     
     const customers = await Customer.findAll(filters);
@@ -86,5 +87,47 @@ exports.updateCustomer = async (req, res) => {
   } catch (error) {
     console.error('Error updating customer:', error);
     res.status(500).json({ status: 'error', message: 'Erro ao atualizar cliente.' });
+  }
+};
+
+exports.deleteCustomer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Customer.softDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({ status: 'error', message: 'Cliente não encontrado.' });
+    }
+
+    res.status(200).json({ status: 'success', message: 'Cliente excluído com sucesso.' });
+  } catch (error) {
+    console.error('Error deleting customer:', error);
+    res.status(500).json({ status: 'error', message: 'Erro ao excluir cliente.' });
+  }
+};
+
+exports.hardDeleteCustomer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const deleted = await Customer.hardDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({ 
+        status: 'error', 
+        message: 'Cliente não encontrado para exclusão permanente.' 
+      });
+    }
+
+    res.status(200).json({ 
+      status: 'success', 
+      message: 'Cliente e todos os seus vínculos foram removidos permanentemente.' 
+    });
+  } catch (error) {
+    console.error('Error in hardDeleteCustomer:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Erro ao realizar exclusão permanente. Verifique dependências no banco.' 
+    });
   }
 };
